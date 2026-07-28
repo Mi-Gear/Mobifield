@@ -35,3 +35,4 @@ async def search(msg:Pepe,state: FSMContext):
 @out.callback_query(Outside.crossroads and F.data.startswith("enter_"))
 @pepe_handler
 async def enter_(msg:Pepe,state: FSMContext):
+    await None

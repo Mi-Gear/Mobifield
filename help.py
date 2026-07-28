@@ -10,8 +10,10 @@ from player import player as pl
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.exceptions import TelegramBadRequest
-
-bt = Bot(token = "8732639893:AAHW1v_eRfcB_nwwBFYkZBYquU577QtZNTQ")
+def read_token():
+    with open("token.txt", "r", encoding="utf-8") as f:
+        return f.read()
+bt = Bot(token = read_token())
 class Pepe:
 
     """

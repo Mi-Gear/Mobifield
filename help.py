@@ -1,19 +1,15 @@
-import json, asyncio,functools
-from aiogram import Bot
-from aiogram.fsm.context import FSMContext
+import json, functools
+from main import bot as bt
 from aiogram.types import Update, CallbackQuery
 from functools import wraps
 from typing import Callable, Optional,Dict, Any
 from aiogram.types import CallbackQuery, Message, User,Chat
 import sqlite3
-from player import player as pl
+from utils.player import player as pl
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.exceptions import TelegramBadRequest
-def read_token():
-    with open("token.txt", "r", encoding="utf-8") as f:
-        return f.read()
-bt = Bot(token = read_token())
+
+
 class Pepe:
 
     """
@@ -258,8 +254,6 @@ class Pepe:
     
     def __repr__(self):
         return self.__str__()
-
-
 
 def pepe_handler(func: Callable) -> Callable:
     """

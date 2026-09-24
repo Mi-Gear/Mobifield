@@ -13,10 +13,9 @@ twn = Router()
 
 
 @prn
-async def enter(event: Pepe,state:FSMContext):
-    await delete_messages(event.get_user_id())
-    photo = FSInputFile("utils/town.png")
-    call = event
+async def enter(call: Pepe,state:FSMContext):
+    await delete_messages(call.get_user_id())
+    photo = FSInputFile("images/town.png")
     kb = InlineKeyboardMarkup(inline_keyboard=
         [
             [InlineKeyboardButton(text="Лицензия гильдии",callback_data="profile")],

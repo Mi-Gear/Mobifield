@@ -18,12 +18,11 @@ reg = Router()
 @reg.message(Command("start"))
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
-    with open("utils/dialog.json","r",encoding="utf-8") as file:
-        reg_dialog = json.load(dialog["registration"])
+    reg_dialog = dialog["registration"]
     await state.set_state(Reg.goto_hub)
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Воин",callback_data="class_warrior")],[InlineKeyboardButton(text = "Стрелок",callback_data="class_archer")],[InlineKeyboardButton(text = "Маг",callback_data="class_mage")]])
-    msg = await message.send_photo(caption=reg_dialog["1"].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
+    msg = await message.send_photo(caption=reg_dialog[0].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
     add_to_trash(message.get_user_id(),msg.message_id)
 
 @reg.callback_query(Reg.goto_hub)

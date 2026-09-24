@@ -28,6 +28,7 @@ async def on_enter(message:Pepe, state: FSMContext):
 @reg.callback_query(StateFilter("reg_0"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
+    print(message.callback_message.text)
     bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("reg_1")
     photo = FSInputFile("images/guildmaster.jpg")

@@ -321,7 +321,7 @@ def add_player(player: pl):
     cursor.execute(f"select * from players where ID = {player.id}")
     data = cursor.fetchone()
     if data is None:
-        cursor.execute(f"INSERT INTO players values (?, ?, ?)",(player.id,player.name,player.cls))
+        cursor.execute(f"INSERT INTO players (ID, name, class) values (?, ?, ?)",(player.id,player.name,player.cls))
         conn.commit()
 
 async def delete_messages(id):

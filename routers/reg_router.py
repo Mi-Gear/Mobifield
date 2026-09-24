@@ -31,7 +31,7 @@ async def reg_1(message:Pepe, state: FSMContext):
     #print(message.callback_from.full_name)
     await state.set_state("reg_1")
     photo = FSInputFile("images/guildmaster.jpg")
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="{name}".format(name=message._get_user().first_name))]])
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="{name}".format(name=message._get_user().first_name), callback_data="123")]])
     msg = await message.send_photo(caption=reg_dialog[1],photo=photo,reply_markup = kb)
     
 @reg.callback_query(Reg.goto_hub)

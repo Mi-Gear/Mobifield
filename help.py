@@ -297,7 +297,7 @@ def prn(func):
     return wrapper
 
 dialog = {}
-with open("dialog.json","r",encoding="utf-8") as file:
+with open("utils/dialog.json","r",encoding="utf-8") as file:
     dialog = json.load(file)
 
 

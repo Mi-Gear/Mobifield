@@ -1,5 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from help import *
 from help import dialog
 import json
@@ -25,7 +25,7 @@ async def on_enter(message:Pepe, state: FSMContext):
     msg = await message.send_photo(caption=reg_dialog[0].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
 
 @prn
-@reg.callback_query("123")
+@reg.callback_query(StateFilter("reg_0"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
     #print(message.callback_from.full_name)

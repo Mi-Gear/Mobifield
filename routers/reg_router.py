@@ -1,7 +1,7 @@
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command, StateFilter
 from help import *
-from help import dialog
+from help import dialog,bot
 import json
 import asyncio
 from routers.town_router import enter
@@ -28,7 +28,7 @@ async def on_enter(message:Pepe, state: FSMContext):
 @reg.callback_query(StateFilter("reg_0"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
-    print(message.callback_from.full_name)
+    bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("reg_1")
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="{name}".format(name=message._get_user().first_name), callback_data="123")]])

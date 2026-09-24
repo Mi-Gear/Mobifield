@@ -6,7 +6,7 @@ import asyncio
 from aiogram import F, Router
 from aiogram.fsm.state import State, StatesGroup
 from utils.functions import *
-from states import Town
+from states.states import Town
 
 twn = Router()
 

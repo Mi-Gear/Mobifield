@@ -5,7 +5,7 @@ import json
 import asyncio
 from aiogram import F, Router
 from aiogram.fsm.state import State, StatesGroup
-from states import Town, Outside
+from states.states import Town, Outside
 
 out = Router()
 

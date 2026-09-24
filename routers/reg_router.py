@@ -3,9 +3,9 @@ from aiogram.filters import Command
 from help import *
 import json
 import asyncio
-from town_router import enter
+from routers.town_router import enter
 from aiogram import F, Router
-from states import Reg
+from states.states import Reg
 
 from utils.functions import *
 

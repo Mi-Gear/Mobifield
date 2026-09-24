@@ -1,6 +1,7 @@
 import json, functools
-from main import bot as bt
 from aiogram.types import Update, CallbackQuery
+from aiogram import Bot
+from utils.config import TOKEN
 from functools import wraps
 from typing import Callable, Optional,Dict, Any
 from aiogram.types import CallbackQuery, Message, User,Chat
@@ -8,6 +9,7 @@ import sqlite3
 from utils.player import player as pl
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+bot = Bot(token = TOKEN())
 
 
 class Pepe:
@@ -327,7 +329,7 @@ async def delete_messages(id):
     data = cursor.fetchall()
     for i in data:
         print(isinstance(i[1],int))
-        await bt.delete_message(i[0],i[1])
+        await bot.delete_message(i[0],i[1])
         cursor.execute(f"DELETE FROM TRASH WHERE msg_id = ?",(i[1],))
         conn.commit()
 

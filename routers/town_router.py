@@ -15,7 +15,7 @@ twn = Router()
 @prn
 async def enter(event: Pepe,state:FSMContext):
     await delete_messages(event.get_user_id())
-    photo = FSInputFile("town.png")
+    photo = FSInputFile("utils/town.png")
     call = event
     kb = InlineKeyboardMarkup(inline_keyboard=
         [

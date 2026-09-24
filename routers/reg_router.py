@@ -11,6 +11,7 @@ from states.states import Reg
 from utils.functions import *
 
 reg = Router()
+reg_dialog = dialog["registration"]
 
 
 
@@ -18,14 +19,21 @@ reg = Router()
 @reg.message(Command("start"))
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
-    reg_dialog = dialog["registration"]
-    await state.set_state(Reg.goto_hub)
+    await state.set_state("reg_0")
     photo = FSInputFile("images/guildmaster.jpg")
-    #kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Воин",callback_data="class_warrior")],[InlineKeyboardButton(text = "Стрелок",callback_data="class_archer")],[InlineKeyboardButton(text = "Маг",callback_data="class_mage")]])
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Я хочу вступить в гильдию!",callback_data="123")]])
     msg = await message.send_photo(caption=reg_dialog[0].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
-    add_to_trash(message.get_user_id(),msg.message_id)
 
+@prn
+@reg.callback_query("reg_0")
+@pepe_handler
+async def reg_1(message:Pepe, state: FSMContext):
+    print(message.callback_from.full_name)
+    await state.set_state("reg_1")
+    photo = FSInputFile("images/guildmaster.jpg")
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="{name}".format(name=message._get_user().first_name))]])
+    msg = await message.send_photo(caption=reg_dialog[1],photo=photo,reply_markup = kb)
+    
 @reg.callback_query(Reg.goto_hub)
 @pepe_handler
 @prn

@@ -28,7 +28,7 @@ async def on_enter(message:Pepe, state: FSMContext):
 @reg.callback_query(StateFilter("reg_0"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
-    #print(message.callback_from.full_name)
+    print(message.callback_from.full_name)
     await state.set_state("reg_1")
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="{name}".format(name=message._get_user().first_name), callback_data="123")]])

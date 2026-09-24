@@ -302,7 +302,7 @@ with open("utils/dialog.json","r",encoding="utf-8") as file:
 
 
 
-conn = sqlite3.connect('db.sqlite')
+conn = sqlite3.connect('utils/db.sqlite')
 cursor = conn.cursor()
 
 def get_player(id):

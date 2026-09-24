@@ -19,9 +19,9 @@ reg = Router()
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
     await state.set_state(Reg.goto_hub)
-    photo = FSInputFile("guildmaster.jpg")
+    photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Воин",callback_data="class_warrior")],[InlineKeyboardButton(text = "Стрелок",callback_data="class_archer")],[InlineKeyboardButton(text = "Маг",callback_data="class_mage")]])
-    msg = await message.send_photo(caption=dialog["1"].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
+    msg = await message.send_photo(caption=dialog["registration"]["1"].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
     add_to_trash(message.get_user_id(),msg.message_id)
 
 @reg.callback_query(Reg.goto_hub)

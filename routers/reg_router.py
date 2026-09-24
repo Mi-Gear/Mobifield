@@ -25,7 +25,7 @@ async def on_enter(message:Pepe, state: FSMContext):
     msg = await message.send_photo(caption=reg_dialog[0].format(name=message._get_user().first_name),photo=photo,reply_markup = kb)
 
 @prn
-@reg.callback_query("reg_0")
+@reg.callback_query("123")
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
     #print(message.callback_from.full_name)

@@ -16,7 +16,7 @@ async def crossroads(ev:Pepe,state:FSMContext):
             [
                 [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
                 [InlineKeyboardButton(text="Поля",callback_data="enter_fields")],
-                [InlineKeyboardButton(text="Назад",callback_data="enter_town")]
+                [InlineKeyboardButton(text="Назад",callback_data="back_town")]
             ]
         )
     await ev.send_message(text = dialog["5"], reply_markup=kb)

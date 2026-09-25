@@ -13,7 +13,7 @@ def profile(id):
     return [user.name]
 
 @prn
-@twn.callback_query(StateFilter("enter_town"))
+@twn.callback_query(StateFilter("back_town"))
 @twn.callback_query(F.data == "enter_town")
 @pepe_handler
 async def enter(message: Pepe,state:FSMContext):

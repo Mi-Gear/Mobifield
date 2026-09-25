@@ -12,19 +12,21 @@ reg = Router()
 reg_dialog = dialog["registration"]
 
 
-
 @prn
 @reg.message(Command("start"))
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.get_user_id(), message_id=message.message_id)
-    await state.set_state("reg_0")
-    photo = FSInputFile("images/guildmaster.jpg")
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Я хочу вступить в гильдию!",callback_data="123")]])
-    msg = await message.send_photo(caption=reg_dialog[0],photo=photo,reply_markup = kb)
+    if get_player(message.get_user_id() == None and message.get_user_id() != 658742998):
+        msg = await message.send_message(text="Повторная попытка регистрации в гильдии нарушает законы Мобифилда. Вам отказано!")
+    else:
+        await state.set_state("reg_0")
+        photo = FSInputFile("images/guildmaster.jpg")
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Я хочу вступить в гильдию!",callback_data="123")]])
+        msg = await message.send_photo(caption=reg_dialog[0],photo=photo,reply_markup = kb)
 
 @prn
-@reg.callback_query(StateFilter(not "reg_0"))
+@reg.callback_query(StateFilter("reg_0"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)

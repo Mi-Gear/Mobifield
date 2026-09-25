@@ -21,9 +21,9 @@ async def enter(message: Pepe,state:FSMContext):
     
     prof = profile(message.get_user_id())
     data = await state.get_data()
-    if data.inv_id is None:  
+    if data.get("inv_id") is None:  
         inv = await message.send_message(text=f"Авантюрист: {prof[0]}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n")
-        await state.update_data({"inv_id":f"{inv}"})
+        await state.update_data({"inv_id":f"{inv.message_id}"})
     
     await state.set_state("town")
     photo = FSInputFile("images/town.png")

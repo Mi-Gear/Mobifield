@@ -19,7 +19,7 @@ reg_dialog = dialog["registration"]
 @reg.message(Command("start"))
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
-    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.message_id)
+    await bot.delete_message(chat_id=message.get_user_id(), message_id=message.message_id)
     await state.set_state("reg_0")
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Я хочу вступить в гильдию!",callback_data="123")]])

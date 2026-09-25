@@ -26,10 +26,11 @@ async def crossroads(ev:Pepe,state:FSMContext):
 @pepe_handler
 async def enter_(msg:Pepe,state: FSMContext):
     await state.set_state(msg.get_callback_data())
+    await state.update_data(msg)
     await globals()[msg._get_callback_data()](msg,state)
 
 @prn
-async def enter_forest(ev:Pepe,state=FSMContext):
+async def search(ev:Pepe,state=FSMContext):
     kb = InlineKeyboardMarkup(inline_keyboard=
         [
             [InlineKeyboardButton(text="Обыск",callback_data="search_forest")],

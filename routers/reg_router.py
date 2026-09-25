@@ -50,7 +50,7 @@ async def reg_1(message:Pepe, state: FSMContext):
 @pepe_handler
 async def class_handler(message: Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
-    await state.set_state("enter_town")
+    await state.set_state("back_town")
     data = message._get_callback_data()
     player = pl()
     player.id,player.name,player.cls = message. _get_user().id,message._get_user().first_name, data.split("class_")[1]

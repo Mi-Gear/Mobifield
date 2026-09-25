@@ -28,13 +28,22 @@ async def on_enter(message:Pepe, state: FSMContext):
 @reg.callback_query(StateFilter("reg_0"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
-    print(message.callback_message.text)
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("reg_1")
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="{name}".format(name=message._get_user().first_name), callback_data="123")]])
     msg = await message.send_photo(caption=reg_dialog[1],photo=photo,reply_markup = kb)
-    
+
+@prn
+@reg.callback_query(StateFilter("reg_1"))
+@pepe_handler
+async def reg_1(message:Pepe, state: FSMContext):
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
+    await state.set_state("reg_2")
+    photo = FSInputFile("images/guildmaster.jpg")
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Какая нахуй должность дед ты ебанулся?".format(name=message._get_user().first_name), callback_data="123")]])
+    msg = await message.send_photo(caption=reg_dialog[2],photo=photo,reply_markup = kb)
+
 @reg.callback_query(Reg.goto_hub)
 @pepe_handler
 @prn

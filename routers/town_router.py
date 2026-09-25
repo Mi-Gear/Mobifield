@@ -1,5 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from help import *
 import json
 import asyncio
@@ -13,7 +13,9 @@ twn = Router()
 
 
 @prn
+@twn.callback_query(StateFilter("town"))
 async def enter(call: Pepe,state:FSMContext):
+    bot.delete_message()
     await delete_messages(call.get_user_id())
     photo = FSInputFile("images/town.png")
     kb = InlineKeyboardMarkup(inline_keyboard=
@@ -23,5 +25,4 @@ async def enter(call: Pepe,state:FSMContext):
             [InlineKeyboardButton(text="Кузница",callback_data="smelt"),InlineKeyboardButton(text="В Яблочко!",callback_data="archer_shop"),InlineKeyboardButton(text = "Вжух!",callback_data="mage_shop")]
         ]
     )
-    await state.set_state(Town.street)
     await call.send_photo(caption="Мрачные улицы, крысы, грязь и вечная суета. Здесь особо нечего ловить. Разве что у тебя есть золотишко..",photo=photo,reply_markup=kb)

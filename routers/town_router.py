@@ -11,7 +11,7 @@ from states.states import Town
 twn = Router()
 def profile(id):
     user = get_player(id)
-    profil = [user['name']]
+    profil = [user.name]
     return profil
 @prn
 @twn.callback_query(StateFilter("town"))

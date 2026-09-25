@@ -10,13 +10,16 @@ from states.states import Town
 
 twn = Router()
 def profile(id):
-    user = get_player{id}
-    profile = {user[]}
+    user = get_player(id)
+    profil = [user['name']]
+    return profil
 @prn
 @twn.callback_query(StateFilter("town"))
 @pepe_handler
 async def enter(message: Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
+    prof = profile(message.get_user_id())
+    await message.send_message(text=f"{prof[0]}")
     photo = FSInputFile("images/town.png")
     kb = InlineKeyboardMarkup(inline_keyboard=
         [

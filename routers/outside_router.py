@@ -1,18 +1,17 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from help import *
 import json
 import asyncio
 from aiogram import F, Router
-from aiogram.fsm.state import State, StatesGroup
-from states.states import Town, Outside
 
 out = Router()
 
 @prn
-@out.callback_query(Town.street and F.data=="outside")
+@out.callback_query(StateFilter("town") and F.data=="outside")
 @pepe_handler
 async def crossroads(ev:Pepe,state:FSMContext):
+    await state.set_state("crossroads")
     kb = InlineKeyboardMarkup(inline_keyboard=
             [
                 [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
@@ -23,16 +22,12 @@ async def crossroads(ev:Pepe,state:FSMContext):
     await ev.send_message(text = dialog["5"], reply_markup=kb)
 
 @prn
-@out.callback_query(Outside.crossroads and F.data.startswith("enter_"))
+@out.callback_query(StateFilter("crossroads") and F.data.startswith("enter_"))
 @pepe_handler
 async def enter_(msg:Pepe,state: FSMContext):
-    await state.set_state("Outside:"+msg._get_callback_data().split("enter_")[1])
+    await state.set_state(msg.get_callback_data())
     await globals()[msg._get_callback_data()](msg,state)
 
-func = {
-    
-
-}
 @prn
 async def enter_forest(ev:Pepe,state=FSMContext):
     kb = InlineKeyboardMarkup(inline_keyboard=

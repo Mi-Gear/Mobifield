@@ -6,7 +6,6 @@ import json
 import asyncio
 from routers.town_router import enter
 from aiogram import F, Router
-from states.states import Reg
 
 from utils.functions import *
 

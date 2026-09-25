@@ -17,8 +17,7 @@ reg_dialog = dialog["registration"]
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.get_user_id(), message_id=message.message_id)
-    if get_player((message.get_user_id())) != None and message.get_user_id() != 658742998:
-        if message.get_user_id() == 658742998: print("Тебе можно!")
+    if get_player((message.get_user_id())) != None or message.get_user_id() != 658742998:
         msg = await message.send_message(text="Повторная попытка регистрации в гильдии нарушает законы Мобифилда. Вам отказано!")
     else:
         await state.set_state("reg_0")

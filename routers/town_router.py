@@ -10,10 +10,9 @@ from states.states import Town
 
 twn = Router()
 
-
-
 @prn
 @twn.callback_query(StateFilter("town"))
+@pepe_handler
 async def enter(message: Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await delete_messages(message.get_user_id())

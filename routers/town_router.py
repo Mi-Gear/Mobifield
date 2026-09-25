@@ -20,7 +20,10 @@ async def enter(message: Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     
     prof = profile(message.get_user_id())
-    await message.send_message(text=f"Авантюрист: {prof[0]}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n")
+    data = await state.get_data()
+    if data["inv_id"] is None:  
+        inv = await message.send_message(text=f"Авантюрист: {prof[0]}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n")
+        await state.update_data({"inv_id":f"{inv}"})
     
     await state.set_state("town")
     photo = FSInputFile("images/town.png")

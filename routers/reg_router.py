@@ -38,6 +38,7 @@ async def reg_1(message:Pepe, state: FSMContext):
 @reg.callback_query(StateFilter("reg_1"))
 @pepe_handler
 async def reg_1(message:Pepe, state: FSMContext):
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("reg_2")
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Воин", callback_data="class_warrior")],[InlineKeyboardButton(text="Лучник", callback_data="class_ranger")],[InlineKeyboardButton(text="Колдун", callback_data="class_mage")]])

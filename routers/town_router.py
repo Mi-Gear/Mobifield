@@ -14,9 +14,9 @@ twn = Router()
 
 @prn
 @twn.callback_query(StateFilter("town"))
-async def enter(call: Pepe,state:FSMContext):
-    bot.delete_message()
-    await delete_messages(call.get_user_id())
+async def enter(message: Pepe,state:FSMContext):
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
+    await delete_messages(message.get_user_id())
     photo = FSInputFile("images/town.png")
     kb = InlineKeyboardMarkup(inline_keyboard=
         [
@@ -25,4 +25,4 @@ async def enter(call: Pepe,state:FSMContext):
             [InlineKeyboardButton(text="Кузница",callback_data="smelt"),InlineKeyboardButton(text="В Яблочко!",callback_data="archer_shop"),InlineKeyboardButton(text = "Вжух!",callback_data="mage_shop")]
         ]
     )
-    await call.send_photo(caption="Мрачные улицы, крысы, грязь и вечная суета. Здесь особо нечего ловить. Разве что у тебя есть золотишко..",photo=photo,reply_markup=kb)
+    await message.send_photo(caption="Мрачные улицы, крысы, грязь и вечная суета. Здесь особо нечего ловить. Разве что у тебя есть золотишко..",photo=photo,reply_markup=kb)

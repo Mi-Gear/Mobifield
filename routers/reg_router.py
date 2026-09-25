@@ -56,6 +56,6 @@ async def class_handler(message: Pepe, state: FSMContext):
     player.id,player.name,player.cls = message. _get_user().id,message._get_user().first_name, data.split("class_")[1]
     add_player(player)
     photo = FSInputFile("images/guildmaster.jpg")
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Спасибо!", callback_data="123")]])
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Спасибо!", callback_data="back_town")]])
     msg = await message.send_photo(caption=reg_dialog[3],photo=photo,reply_markup = kb)
 

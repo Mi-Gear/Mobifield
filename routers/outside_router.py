@@ -10,7 +10,8 @@ out = Router()
 @prn
 @out.callback_query(StateFilter("town") and F.data=="outside")
 @pepe_handler
-async def crossroads(ev:Pepe,state:FSMContext):
+async def crossroads(message:Pepe,state:FSMContext):
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("crossroads")
     kb = InlineKeyboardMarkup(inline_keyboard=
             [
@@ -19,15 +20,16 @@ async def crossroads(ev:Pepe,state:FSMContext):
                 [InlineKeyboardButton(text="Назад",callback_data="back_town")]
             ]
         )
-    await ev.send_message(text = dialog["5"], reply_markup=kb)
+    await message.send_message(text = dialog["5"], reply_markup=kb)
 
 @prn
 @out.callback_query(StateFilter("crossroads") and F.data.startswith("enter_"))
 @pepe_handler
-async def enter_(msg:Pepe,state: FSMContext):
-    await state.set_state(msg.get_callback_data())
-    await state.update_data(msg)
-    await globals()[msg._get_callback_data()](msg,state)
+async def enter_(message:Pepe,state: FSMContext):
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
+    await state.set_state(message.get_callback_data())
+    await state.update_data(message)
+    await globals()[message._get_callback_data()](message,state)
 
 @prn
 async def search(ev:Pepe,state=FSMContext):
@@ -42,6 +44,7 @@ async def search(ev:Pepe,state=FSMContext):
 @prn
 @out.callback_query(F.data.startswith("search_"))
 @pepe_handler
-async def search(msg:Pepe,state: FSMContext):
+async def search(message:Pepe,state: FSMContext):
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     data = await state.get_state()
-    await globals()[msg._get_callback_data()](msg,state)
+    await globals()[message._get_callback_data()](message,state)

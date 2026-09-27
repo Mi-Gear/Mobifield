@@ -21,9 +21,12 @@ async def enter(message: Pepe,state:FSMContext):
     
     prof = profile(message.get_user_id())
     data = await state.get_data()
-    temp = Message(message_id=data.get("inv_id")).edit_date
-    print(temp)
-    if data.get("inv_id") is None:  
+    try:
+        temp = Message(message_id=data.get("inv_id",None)).edit_date
+        print(temp)
+    except:
+        pass
+    if data.get("inv_id",None) is None:  
         inv = await message.send_message(text=f"Авантюрист: {prof[0]}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n")
         await state.update_data({"inv_id":f"{inv.message_id}"})
     

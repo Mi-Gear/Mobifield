@@ -25,6 +25,7 @@ async def enter(message: Pepe,state:FSMContext):
     
     try:
         print("A2")
+        print(data.get())
         t = await bot.send_message(
             chat_id=message.get_user_id(),
             text="1",

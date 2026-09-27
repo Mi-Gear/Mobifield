@@ -21,10 +21,14 @@ async def enter(message: Pepe,state:FSMContext):
     
     prof = profile(message.get_user_id())
     data = await state.get_data()
+    print("A1")
+    
     try:
         print("A2")
-        temp = Message(message_id=data.get("inv_id",None)).edit_date
+        temp = Message(message_id=data.get("inv_id",None)).date
         print(temp)
+        print("A3")
+        
     except:
         pass
     if data.get("inv_id",None) is None:  

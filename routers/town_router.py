@@ -22,6 +22,7 @@ async def enter(message: Pepe,state:FSMContext):
     prof = profile(message.get_user_id())
     data = await state.get_data()
     try:
+        print("A2")
         temp = Message(message_id=data.get("inv_id",None)).edit_date
         print(temp)
     except:

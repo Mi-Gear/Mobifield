@@ -26,6 +26,7 @@ async def enter(message: Pepe,state:FSMContext):
     try:
         print("A2")
         temp = Message(message_id=int(data.get("inv_id",None))).date.hour
+        print("A1.5")
         print(temp)
         print("A3")
         

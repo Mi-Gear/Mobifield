@@ -25,9 +25,15 @@ async def enter(message: Pepe,state:FSMContext):
     
     try:
         print("A2")
-        temp = Message(message_id=int(data.get("inv_id",None))).message_id
+        t = await bot.send_message(
+            chat_id=message.get_user_id(),
+            text="1",
+            reply_to_message_id=data.get("inv_id",None)
+        )
+        temp = t.reply_to_message
+        await t.delete()
         print("A1.5")
-        print(temp)
+        print(temp.text)
         print("A3")
         
     except:

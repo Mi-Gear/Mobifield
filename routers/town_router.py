@@ -8,9 +8,7 @@ from aiogram.fsm.state import State, StatesGroup
 from utils.functions import *
 
 twn = Router()
-def profile(id):
-    user = get_player(id)
-    return [user.name]
+
 
 @prn
 @twn.callback_query(F.data =="back_town")

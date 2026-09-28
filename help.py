@@ -333,15 +333,21 @@ async def delete_messages(id):
         cursor.execute(f"DELETE FROM TRASH WHERE msg_id = ?",(i[1],))
         conn.commit()
 
+def profile(id):
+    user = get_player(id)
+    return [user.name]
+
 async def edit_profile_message(id,m_id,text):
+    profile_text = "Авантюрист: {name}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n"
+    prof = profile(id)
     try:
-        await bot.edit_message_text(text="123",chat_id=id, message_id=m_id)
+        await bot.edit_message_text(text=profile_text.format(name=prof[0]),chat_id=id, message_id=m_id)
     except:
         try:
             await bot.delete_message(chat_id=id,message_id=m_id)
         except:
             pass
-        await bot.send_message(123)
+        await bot.send_message(text=profile_text.format(name=prof[0]))
         
 
 def add_to_trash(id,msg_id):

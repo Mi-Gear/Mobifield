@@ -33,7 +33,7 @@ async def enter_(message:Pepe,state: FSMContext):
     kb = InlineKeyboardMarkup(inline_keyboard=
             [
                 [InlineKeyboardButton(text="Обыск",callback_data=f"search_{cbd.split("enter_")}")],
-                [InlineKeyboardButton(text="Назад",callback_data="cross")]
+                [InlineKeyboardButton(text="Назад",callback_data="back_crossroads")]
             ]
         )
     await message.send_message(text = outside_dialog[cbd.split("enter_")[1]], reply_markup=kb)

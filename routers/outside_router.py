@@ -11,7 +11,7 @@ cr_kb = InlineKeyboardMarkup(inline_keyboard=
             [
                 [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
                 [InlineKeyboardButton(text="Поля",callback_data="enter_fields")],
-                [InlineKeyboardButton(text="Назад",callback_data="back_town")]
+                [InlineKeyboardButton(text="Назад",callback_data="outside")]
             ]
         )
 @prn
@@ -50,7 +50,7 @@ async def back_(message:Pepe,state:FSMContext):
             photo = FSInputFile("images/town.png")
             await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=town_kb)
         case "crossroads":
-            await state.set_state("enter_crossroads")
+            await state.set_state("town")
             await message.send_message(text=dialog["town"][0],reply_markup=cr_kb)
 
 

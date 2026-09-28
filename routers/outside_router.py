@@ -36,7 +36,7 @@ async def enter_(message:Pepe,state: FSMContext):
                 [InlineKeyboardButton(text="Назад",callback_data="cross")]
             ]
         )
-    await message.send_message(text = outside_dialog[cbd.split("enter_")[0]], reply_markup=kb)
+    await message.send_message(text = outside_dialog[cbd.split("enter_")[1]], reply_markup=kb)
     
 @prn
 @out.callback_query(F.data.startswith("back_"))

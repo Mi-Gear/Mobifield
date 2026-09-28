@@ -23,7 +23,7 @@ async def crossroads(message:Pepe,state:FSMContext):
     await message.send_message(text = outside_dialog["crossroads"], reply_markup=cr_kb)
 
 @prn
-@out.callback_query(StateFilter("crossroads") and F.data.startswith("back_"))
+@out.callback_query(StateFilter("crossroads"))
 @out.callback_query(StateFilter("crossroads") and F.data.startswith("enter_"))
 @pepe_handler
 async def enter_(message:Pepe,state: FSMContext):
@@ -50,7 +50,7 @@ async def back_(message:Pepe,state:FSMContext):
             photo = FSInputFile("images/town.png")
             await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=town_kb)
         case "crossroads":
-            await state.set_state("back_crossroads")
+            await state.set_state("enter_crossroads")
             await message.send_message(text=dialog["town"][0],reply_markup=cr_kb)
 
 

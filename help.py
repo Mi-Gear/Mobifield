@@ -347,7 +347,7 @@ async def edit_profile_message(id,m_id,text):
             await bot.delete_message(chat_id=id,message_id=m_id)
         except:
             pass
-        await bot.send_message(text=profile_text.format(name=prof[0]))
+        await bot.send_message(text=profile_text.format(name=prof[0]),chat_id=id)
         
 
 def add_to_trash(id,msg_id):

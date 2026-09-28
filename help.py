@@ -11,6 +11,13 @@ from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 bot = Bot(token = TOKEN())
 
+town_kb = InlineKeyboardMarkup(inline_keyboard=
+        [
+            [InlineKeyboardButton(text="Лицензия гильдии",callback_data="profile")],
+            [InlineKeyboardButton(text="За город",callback_data="outside")],
+            [InlineKeyboardButton(text="Кузница",callback_data="smelt"),InlineKeyboardButton(text="В Яблочко!",callback_data="archer_shop"),InlineKeyboardButton(text = "Вжух!",callback_data="mage_shop")]
+        ]
+    )
 
 class Pepe:
 

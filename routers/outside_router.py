@@ -27,8 +27,15 @@ async def crossroads(message:Pepe,state:FSMContext):
 @pepe_handler
 async def enter_(message:Pepe,state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
-    callback = message.get_callback_data()
-    print(callback)
+    cbd = message.get_callback_data()
+    await state.set_state(cbd)
+    kb = InlineKeyboardMarkup(inline_keyboard=
+            [
+                [InlineKeyboardButton(text="Обыск",callback_data=f"search_{cbd.split("enter_")}")],
+                [InlineKeyboardButton(text="Назад",callback_data="cross")]
+            ]
+        )
+    await message.send_message(text = dialog["3"], reply_markup=kb)
 
 @prn
 async def search(ev:Pepe,state=FSMContext):

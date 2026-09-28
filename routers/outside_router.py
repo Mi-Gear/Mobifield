@@ -51,7 +51,7 @@ async def back_(message:Pepe,state:FSMContext):
             await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=town_kb)
         case "crossroads":
             await state.set_state("back_crossroads")
-            await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=cr_kb)
+            await message.send_message(text=dialog["town"][0],reply_markup=cr_kb)
 
 
 @prn

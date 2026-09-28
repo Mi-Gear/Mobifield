@@ -333,6 +333,13 @@ async def delete_messages(id):
         cursor.execute(f"DELETE FROM TRASH WHERE msg_id = ?",(i[1],))
         conn.commit()
 
+async def edit_profile_message(id,m_id):
+    try:
+        bot.edit_message_text(text="123",chat_id=id, message_id=m_id)
+    except:
+        bot.delete_message(chat_id=id,message_id=m_id)
+        bot.send_message(123)
+
 def add_to_trash(id,msg_id):
     cursor.execute("insert into trash values (?, ?)",(id,msg_id))
     conn.commit()

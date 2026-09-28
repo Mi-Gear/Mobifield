@@ -21,27 +21,10 @@ async def enter(message: Pepe,state:FSMContext):
     
     prof = profile(message.get_user_id())
     data = await state.get_data()
-    print("A1")
-    
-    try:
-        print("A2")
-        print(data.get())
-        t = await bot.send_message(
-            chat_id=message.get_user_id(),
-            text="1",
-            reply_to_message_id=data.get("inv_id",None)
-        )
-        temp = t.reply_to_message
-        await t.delete()
-        print("A1.5")
-        print(temp.text)
-        print("A3")
-        
-    except:
-        pass
+    edit_profile_message(message.get_user_id(),data.get("inv_id"))
     if data.get("inv_id",None) is None:  
         inv = await message.send_message(text=f"Авантюрист: {prof[0]}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n")
-        await state.update_data({"inv_id":inv})
+        await state.update_data({"inv_id":f"{inv.message_id}"})
     
     await state.set_state("town")
     photo = FSInputFile("images/town.png")

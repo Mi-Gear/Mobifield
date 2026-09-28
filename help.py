@@ -337,7 +337,7 @@ def profile(id):
     user = get_player(id)
     return [user.name]
 
-async def edit_profile_message(id,m_id,text):
+async def edit_profile_message(id,m_id):
     profile_text = "Авантюрист: {name}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n"
     prof = profile(id)
     try:

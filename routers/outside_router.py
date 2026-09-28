@@ -27,9 +27,8 @@ async def crossroads(message:Pepe,state:FSMContext):
 @pepe_handler
 async def enter_(message:Pepe,state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
-    await state.set_state(message.get_callback_data())
-    await state.update_data(message)
-    await globals()[message._get_callback_data()](message,state)
+    callback = await message.get_callback_data()
+    print(callback)
 
 @prn
 async def search(ev:Pepe,state=FSMContext):

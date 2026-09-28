@@ -24,7 +24,7 @@ async def enter(message: Pepe,state:FSMContext):
         inv = await message.send_message(text=profile_text.format(name=prof[0]))
         await state.update_data({"inv_id":f"{inv.message_id}"})
     else:
-        await edit_profile_message(message.get_user_id(),data.get("inv_id"),profile_text.format(name=prof[0]))
+        await edit_profile_message(message.get_user_id(),data.get("inv_id"))
         
     
     await state.set_state("town")

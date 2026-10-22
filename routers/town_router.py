@@ -13,13 +13,21 @@ twn = Router()
 @twn.callback_query(F.data == "enter_town")
 @pepe_handler
 async def enter(message: Pepe,state:FSMContext):
-    profile_text = "Авантюрист: {name}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n"
-    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
-    
+    await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id) 
     prof = profile(message.get_user_id())
+    profile_text = f"""# Авантюрист: {prof.name}
+
+**Класс:** {prof.cls}
+**Уровень:** 1
+**Золото:** 0
+**Репутация:** 0"""
+    
     data = await state.get_data()
     if data.get("inv_id",None) is None:  
-        inv = await message.send_message(text=profile_text.format(name=prof[0]))
+        inv = await message.bot.send_rich_message(
+            chat_id=message.get_user_id(),
+            rich_message=InputRichMessage(markdown=profile_text),            
+            )
         await state.update_data({"inv_id":f"{inv.message_id}"})
     else:
         await edit_profile_message(message.get_user_id(),data.get("inv_id"))

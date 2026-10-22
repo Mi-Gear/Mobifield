@@ -10,8 +10,8 @@ out = Router()
 cr_kb = InlineKeyboardMarkup(inline_keyboard=
             [
                 [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
-                [InlineKeyboardButton(text="Поля",callback_data="enter_fields")],
-                [InlineKeyboardButton(text="Назад",callback_data="outside")]
+                [InlineKeyboardButton(text="Поля",callback_data="enter_field")],
+                [InlineKeyboardButton(text="Назад",callback_data="back_town")]
             ]
         )
 @prn
@@ -32,11 +32,11 @@ async def enter_(message:Pepe,state: FSMContext):
     await state.set_state(cbd)
     kb = InlineKeyboardMarkup(inline_keyboard=
             [
-                [InlineKeyboardButton(text="Обыск",callback_data=f"search_{cbd.split("enter_")[0]}")],
+                [InlineKeyboardButton(text="Обыск",callback_data=f"search_{cbd.split("enter_")[1]}")],
                 [InlineKeyboardButton(text="Назад",callback_data="back_crossroads")]
             ]
         )
-    await message.send_message(text = outside_dialog[cbd.split("enter_")[0]], reply_markup=kb)
+    await message.send_message(text = outside_dialog[cbd.split("enter_")[1]], reply_markup=kb)
     
 @prn
 @out.callback_query(F.data.startswith("back_"))
@@ -44,14 +44,14 @@ async def enter_(message:Pepe,state: FSMContext):
 async def back_(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     call = message.callback_data.split("back_")
-    match call:
+    match call[1]:
         case "town":
             await state.set_state("back_town")
             photo = FSInputFile("images/town.png")
             await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=town_kb)
         case "crossroads":
-            await state.set_state("town")
-            await message.send_message(text=dialog["town"][0],reply_markup=cr_kb)
+            await state.set_state("back_crossroads")
+            await message.send_message(text=outside_dialog["crossroads"],reply_markup=cr_kb)
 
 
 @prn

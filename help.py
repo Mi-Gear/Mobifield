@@ -28,7 +28,7 @@ class Pepe:
     def __init__(self, source: Union[Message, CallbackQuery]):
         self._source = source
         self._is_callback = isinstance(source, CallbackQuery)
-        
+        self.bot = bot
         # Основные поля
         self.user: User = self._get_user()
         self.chat: Optional[Chat] = self._get_chat()
@@ -341,8 +341,7 @@ async def delete_messages(id):
         conn.commit()
 
 def profile(id):
-    user = get_player(id)
-    return [user.name]
+    return get_player(id)
 
 async def edit_profile_message(id,m_id):
     profile_text = "Авантюрист: {name}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n"

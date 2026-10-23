@@ -14,7 +14,7 @@ out = Router()
 async def crossroads(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("crossroads")
-    await message.send_message(text = outside_dialog["crossroads"], reply_markup=outside_keyboard(get_player(message.get_user_id()).lvl))
+    await message.send_message(text = outside_dialog["crossroads"], reply_markup=outside_keyboard((await get_player(message.get_user_id())).lvl))
 
 @prn
 @out.callback_query(StateFilter("crossroads"), F.data.startswith("enter_"))

@@ -15,7 +15,7 @@ reg_dialog = dialog["registration"]
 @pepe_handler
 async def on_enter(message:Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-    if get_player(message.get_user_id()) != None and message.get_user_id() != 658742998:
+    if await get_player(message.get_user_id()) is not None and message.get_user_id() != 658742998:
         msg = await message.send_message(text="Повторная попытка регистрации в гильдии нарушает законы Мобифилда. Вам отказано!")
     else:
         await state.set_state("reg_0")
@@ -42,7 +42,7 @@ async def class_handler(message: Pepe, state: FSMContext):
     await state.set_state("back_town")
     player = pl()
     player.id,player.name = message. _get_user().id,message._get_user().first_name
-    add_player(player)
+    await add_player(player)
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Спасибо!", callback_data="back_town")]])
     msg = await message.send_photo(caption=reg_dialog[2],photo=photo,reply_markup = kb)

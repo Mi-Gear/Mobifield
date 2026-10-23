@@ -5,8 +5,12 @@ from utils.config import TOKEN
 from functools import wraps
 from typing import Callable, Optional,Dict, Any
 from aiogram.types import CallbackQuery, Message, User,Chat
-import sqlite3
 from utils.player import player as pl
+from utils.database import (
+    get_player, add_player, get_inventory,
+    delete_messages as _delete_messages,
+    add_to_trash,
+)
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage
 bot = Bot(token = TOKEN())
@@ -294,7 +298,7 @@ def profile_message(func: Callable) -> Callable:
     """Создаёт карточку профиля или обновляет уже отправленную rich message."""
     @wraps(func)
     async def wrapper(message: Pepe, state, *args, **kwargs):
-        player = profile(message.get_user_id())
+        player = await profile(message.get_user_id())
 
         with open("profile_text.txt", "r", encoding="utf-8") as file:
             profile_text = file.read()
@@ -357,66 +361,17 @@ with open("utils/dialog.json","r",encoding="utf-8") as file:
 
 
 
-conn = sqlite3.connect('utils/db.sqlite')
-cursor = conn.cursor()
-
-def get_player(id):
-    player = pl()
-    cursor.execute(f"select * from players where ID = {id}")
-    data = cursor.fetchone()
-    if data is None:
-        return None
-    player.id = data[0]
-    player.name = data[1]
-    player.lvl = data[2]
-    player.exp = data[3]
-    player.gold = data[4]
-    return player
-
-def outside_keyboard(lvl):
-    kb = InlineKeyboardMarkup(inline_keyboard=
-            [
-                [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
-            ]
-        )
-    if lvl >= 5:
-        kb.inline_keyboard.append([InlineKeyboardButton(text="Поля",callback_data="enter_field")])
-    kb.inline_keyboard.append([InlineKeyboardButton(text="Назад",callback_data="back_town")])
-    return kb
+async def delete_messages(player_id):
+    await _delete_messages(player_id, bot)
 
 
-def add_player(player: pl):
-    print(player.id)
-    cursor.execute(f"select * from players where ID = {player.id}")
-    data = cursor.fetchone()
-    if data is None:
-        cursor.execute(f"INSERT INTO players (ID, name,exp,level,gold) values (?, ?, ?, ?, ?)",(player.id,player.name,player.exp,player.lvl,player.gold))
-        conn.commit()
+async def profile(player_id):
+    return await get_player(player_id)
 
-async def delete_messages(id):
-    cursor.execute(f"select * from trash where ID = {id}")
-    data = cursor.fetchall()
-    for i in data:
-        print(isinstance(i[1],int))
-        await bot.delete_message(i[0],i[1])
-        cursor.execute(f"DELETE FROM TRASH WHERE msg_id = ?",(i[1],))
-        conn.commit()
-
-def profile(id):
-    return get_player(id)
-        
-
-def add_to_trash(id,msg_id):
-    cursor.execute("insert into trash values (?, ?)",(id,msg_id))
-    conn.commit()
-
-def get_inventory(id):
-    cursor.execute(f"SELECT * FROM INVENTORY WHERE PL_ID = ?",(id,))
-    return cursor.fetchall()
 
 @prn
 async def inventory(event:Pepe):
-    inv = get_inventory(event.get_user_id())
+    inv = await get_inventory(event.get_user_id())
     kbt = []
     for i in inv:
         kbt.append([InlineKeyboardButton(text = i[5] +" "+ i[3],callback_data="inv_item_"+i[1])])

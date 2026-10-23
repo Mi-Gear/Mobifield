@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Integer, String, Table, Column, MetaData, select, delete
+from sqlalchemy import Integer, String, Table, MetaData, select, inspect
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -55,10 +55,14 @@ async def init_db() -> None:
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-        await connection.run_sync(
-            _inventory_metadata.reflect,
-            only=["inventory"],
+        table_names = await connection.run_sync(
+            lambda sync_connection: inspect(sync_connection).get_table_names()
         )
+        if "inventory" in table_names:
+            await connection.run_sync(
+                _inventory_metadata.reflect,
+                only=["inventory"],
+            )
 
     _inventory_table = _inventory_metadata.tables.get("inventory")
     if _inventory_table is not None:

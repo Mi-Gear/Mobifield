@@ -8,8 +8,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = "sqlite+aiosqlite:///utils/db.sqlite"
-Path("utils").mkdir(parents=True, exist_ok=True)
+# Всегда используем файл рядом с этим модулем, независимо от рабочей директории запуска.
+DB_PATH = Path(__file__).resolve().with_name("db.sqlite")
+DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -82,7 +83,7 @@ async def init_db() -> None:
         logger.info("SQLAlchemy: таблица inventory подключена")
     else:
         logger.warning("Таблица inventory пока отсутствует; операции с инвентарём недоступны")
-    logger.info("SQLAlchemy database initialized")
+    logger.info("SQLAlchemy database initialized: %s", DB_PATH)
 
 
 async def get_player(player_id: int):
@@ -164,8 +165,13 @@ async def allocate_stat_point(player_id: int, stat_name: str) -> dict[str, int]:
             setattr(stats, stat_name, getattr(stats, stat_name) + 1)
             stats.points -= 1
             await session.commit()
+            logger.info(
+                "Saved player stats: player_id=%s stat=%s points_left=%s",
+                player_id, stat_name, stats.points,
+            )
         else:
             await session.rollback()
+            logger.warning("No stat points left: player_id=%s", player_id)
 
         return {
             "strength": stats.strength,

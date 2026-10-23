@@ -1,3 +1,14 @@
-./.venv/
-utils/db.sqlite
+# Python
 __pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# Secrets
+.env
+token.txt
+
+# Database
+utils/db.sqlite

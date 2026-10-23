@@ -1,0 +1,113 @@
+2026-10-23 02:27:47,105 | INFO     | mobifield | Бот запускается
+2026-10-23 02:27:47,105 | INFO     | aiogram.dispatcher | Start polling
+2026-10-23 02:27:47,775 | INFO     | aiogram.dispatcher | Run polling for bot @mobifield_bot id=8732639893 - 'Mobifield'
+2026-10-23 02:32:34,814 | WARNING  | aiogram.dispatcher | Received SIGINT signal
+2026-10-23 02:32:34,814 | INFO     | aiogram.dispatcher | Polling stopped for bot @mobifield_bot id=8732639893 - 'Mobifield'
+2026-10-23 02:32:34,815 | INFO     | aiogram.dispatcher | Polling stopped
+2026-10-23 02:32:34,815 | INFO     | mobifield | Бот останавливается
+2026-10-23 02:34:44,984 | INFO     | utils.database | SQLAlchemy: таблица inventory подключена
+2026-10-23 02:34:44,984 | INFO     | utils.database | SQLAlchemy database initialized
+2026-10-23 02:34:44,984 | INFO     | mobifield | Бот запускается
+2026-10-23 02:34:44,984 | INFO     | aiogram.dispatcher | Start polling
+2026-10-23 02:34:45,671 | INFO     | aiogram.dispatcher | Run polling for bot @mobifield_bot id=8732639893 - 'Mobifield'
+2026-10-23 02:35:28,429 | INFO     | aiogram.event | Update id=194676661 is handled. Duration 2264 ms by bot id=8732639893
+2026-10-23 02:35:31,208 | INFO     | aiogram.event | Update id=194676662 is not handled. Duration 787 ms by bot id=8732639893
+2026-10-23 02:35:31,208 | ERROR    | aiogram.event | Cause exception while process update id=194676662 by bot id=8732639893
+NameError: name 'outside_keyboard' is not defined
+Traceback (most recent call last):
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 321, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+    )
+    ^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 284, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 172, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 164, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 200, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 172, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 164, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 200, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 172, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 164, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 200, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 172, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 164, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 192, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/.venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/help.py", line 292, in wrapper
+    return await func(Pepe(source), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/help.py", line 346, in wrapper
+    return await func(message, state, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mi/Projects/Mobifield/routers/outside_router.py", line 18, in crossroads
+    await message.send_message(text = outside_dialog["crossroads"], reply_markup=outside_keyboard((await get_player(message.get_user_id())).lvl))
+                                                                                 ^^^^^^^^^^^^^^^^
+NameError: name 'outside_keyboard' is not defined
+2026-10-23 02:36:37,863 | WARNING  | aiogram.dispatcher | Received SIGINT signal
+2026-10-23 02:36:37,864 | INFO     | aiogram.dispatcher | Polling stopped for bot @mobifield_bot id=8732639893 - 'Mobifield'
+2026-10-23 02:36:37,865 | INFO     | aiogram.dispatcher | Polling stopped
+2026-10-23 02:36:37,866 | INFO     | utils.database | SQLAlchemy engine closed
+2026-10-23 02:36:37,866 | INFO     | mobifield | Бот останавливается

@@ -294,6 +294,17 @@ def pepe_handler(func: Callable) -> Callable:
     return wrapper
 
 
+def outside_keyboard(lvl):
+    kb = InlineKeyboardMarkup(inline_keyboard=
+            [
+                [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
+            ]
+        )
+    if lvl >= 5:
+        kb.inline_keyboard.append([InlineKeyboardButton(text="Поля",callback_data="enter_field")])
+    kb.inline_keyboard.append([InlineKeyboardButton(text="Назад",callback_data="back_town")])
+    return kb
+
 def profile_message(func: Callable) -> Callable:
     """Создаёт карточку профиля или обновляет уже отправленную rich message."""
     @wraps(func)

@@ -8,16 +8,6 @@ from utils.functions import *
 outside_dialog = dialog["outside"]
 out = Router()
 
-
-def outside_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Лес", callback_data="enter_forest")],
-            [InlineKeyboardButton(text="Поле", callback_data="enter_field")],
-            [InlineKeyboardButton(text="Назад в город", callback_data="back_town")],
-        ]
-    )
-
 @prn
 @out.callback_query(StateFilter("town"), F.data == "outside")
 @pepe_handler
@@ -25,7 +15,7 @@ def outside_keyboard():
 async def crossroads(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("crossroads")
-    await message.send_message(text = outside_dialog["crossroads"], reply_markup=outside_keyboard())
+    await message.send_message(text = outside_dialog["crossroads"], reply_markup=outside_keyboard((await get_player(message.get_user_id())).lvl))
 
 @prn
 @out.callback_query(StateFilter("crossroads"), F.data.startswith("enter_"))
@@ -57,7 +47,7 @@ async def back_(message:Pepe,state:FSMContext):
             await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=town_kb)
         case "crossroads":
             await state.set_state("back_crossroads")
-            await message.send_message(text=outside_dialog["crossroads"],reply_markup=outside_keyboard())
+            await message.send_message(text=outside_dialog["crossroads"],reply_markup=outside_keyboard((await get_player(message.get_user_id())).lvl))
 
 
 @prn

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from typing import Any
@@ -14,7 +15,7 @@ class SQLiteStorage(BaseStorage):
     def __init__(self, db_path: str = "bot_state.db") -> None:
         self.db_path = db_path
         self._initialized = False
-        self._init_lock = __import__("asyncio").Lock()
+        self._init_lock = asyncio.Lock()
 
     async def _ensure_db(self) -> None:
         """Асинхронно создаёт таблицу при первом обращении к хранилищу."""

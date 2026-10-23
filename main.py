@@ -32,7 +32,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mobifield")
 
-storage = SQLiteStorage("utils/db.sqlite")
+storage = SQLiteStorage()
 dp = Dispatcher(bot=bot, storage=storage)
 
 dp.include_router(reg)

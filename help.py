@@ -289,6 +289,61 @@ def pepe_handler(func: Callable) -> Callable:
 
     return wrapper
 
+
+def profile_message(func: Callable) -> Callable:
+    """Создаёт карточку профиля или обновляет уже отправленную rich message."""
+    @wraps(func)
+    async def wrapper(message: Pepe, state, *args, **kwargs):
+        player = profile(message.get_user_id())
+
+        with open("profile_text.txt", "r", encoding="utf-8") as file:
+            profile_text = file.read()
+
+        with open("level.json", "r", encoding="utf-8") as file:
+            levels = json.load(file)
+
+        need_xp = levels[str(player.lvl)]
+        step = max(1, need_xp // 10)
+        filled = max(0, min(10, player.exp // step))
+        xp_bar = "🟨" * filled + "⬛" * (10 - filled)
+
+        rich_message = InputRichMessage(
+            markdown=profile_text.format(
+                name=player.name,
+                exp=player.exp,
+                lvl=player.lvl,
+                gold=player.gold,
+                need_xp=need_xp,
+                bar=xp_bar,
+            )
+        )
+
+        data = await state.get_data()
+        profile_message_id = data.get("inv_id")
+
+        if profile_message_id is None:
+            sent = await message.bot.send_rich_message(
+                chat_id=message.get_user_id(),
+                rich_message=rich_message,
+            )
+            await state.update_data(inv_id=str(sent.message_id))
+        else:
+            from aiogram.exceptions import TelegramBadRequest
+            try:
+                await message.bot.edit_message_text(
+                    rich_message=rich_message,
+                    chat_id=message.get_user_id(),
+                    message_id=int(profile_message_id),
+                )
+            except TelegramBadRequest as error:
+                if "message is not modified" not in error.message:
+                    raise
+
+        return await func(message, state, *args, **kwargs)
+
+    return wrapper
+
+
 def prn(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

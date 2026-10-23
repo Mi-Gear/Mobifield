@@ -1,6 +1,8 @@
 import asyncio
 import json
 import logging
+from contextlib import asynccontextmanager
+
 from typing import Any
 
 import aiosqlite
@@ -45,12 +47,13 @@ class SQLiteStorage(BaseStorage):
             self._initialized = True
             logger.debug("SQLite FSM storage initialized: %s", self.db_path)
 
+    @asynccontextmanager
     async def _connect(self):
-        """Открывает короткоживущее соединение после инициализации БД."""
+        """Открывает соединение на время одной операции и гарантированно закрывает его."""
         await self._ensure_db()
-        conn = await aiosqlite.connect(self.db_path, timeout=5)
-        await conn.execute("PRAGMA busy_timeout = 5000")
-        return conn
+        async with aiosqlite.connect(self.db_path, timeout=5) as conn:
+            await conn.execute("PRAGMA busy_timeout = 5000")
+            yield conn
 
     async def set_state(
         self,
@@ -60,7 +63,7 @@ class SQLiteStorage(BaseStorage):
         # В aiogram обычно передаётся строка состояния или None.
         state_value = getattr(state, "state", state)
 
-        async with await self._connect() as conn:
+        async with self._connect() as conn:
             await conn.execute(
                 """
                 INSERT INTO fsm_states (chat_id, user_id, state, data)
@@ -80,7 +83,7 @@ class SQLiteStorage(BaseStorage):
         )
 
     async def get_state(self, key: StorageKey) -> str | None:
-        async with await self._connect() as conn:
+        async with self._connect() as conn:
             async with conn.execute(
                 "SELECT state FROM fsm_states WHERE chat_id = ? AND user_id = ?",
                 (key.chat_id, key.user_id),
@@ -103,7 +106,7 @@ class SQLiteStorage(BaseStorage):
             logger.exception("Failed to serialize FSM data")
             raise
 
-        async with await self._connect() as conn:
+        async with self._connect() as conn:
             await conn.execute(
                 """
                 INSERT INTO fsm_states (chat_id, user_id, state, data)
@@ -122,7 +125,7 @@ class SQLiteStorage(BaseStorage):
         )
 
     async def get_data(self, key: StorageKey) -> dict[str, Any]:
-        async with await self._connect() as conn:
+        async with self._connect() as conn:
             async with conn.execute(
                 "SELECT data FROM fsm_states WHERE chat_id = ? AND user_id = ?",
                 (key.chat_id, key.user_id),
@@ -158,7 +161,7 @@ class SQLiteStorage(BaseStorage):
 
     async def clear(self) -> None:
         """Удаляет все состояния и данные FSM."""
-        async with await self._connect() as conn:
+        async with self._connect() as conn:
             await conn.execute("DELETE FROM fsm_states")
             await conn.commit()
 

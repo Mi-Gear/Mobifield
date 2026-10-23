@@ -9,7 +9,7 @@ outside_dialog = dialog["outside"]
 out = Router()
 
 @prn
-@out.callback_query(StateFilter("town") and F.data=="outside")
+@out.callback_query(StateFilter("town") & (F.data=="outside"))
 @pepe_handler
 async def crossroads(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
@@ -18,7 +18,7 @@ async def crossroads(message:Pepe,state:FSMContext):
 
 @prn
 @out.callback_query(StateFilter("crossroads"))
-@out.callback_query(StateFilter("crossroads") and F.data.startswith("enter_"))
+@out.callback_query(StateFilter("crossroads") & (F.data.startswith("enter_")))
 @pepe_handler
 async def enter_(message:Pepe,state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
@@ -26,7 +26,7 @@ async def enter_(message:Pepe,state: FSMContext):
     await state.set_state(cbd)
     kb = InlineKeyboardMarkup(inline_keyboard=
             [
-                [InlineKeyboardButton(text="Обыск",callback_data=f"search_{cbd.split("enter_")[1]}")],
+                [InlineKeyboardButton(text="Обыск",callback_data=cbd.replace("enter_","search_"))],
                 [InlineKeyboardButton(text="Назад",callback_data="back_crossroads")]
             ]
         )

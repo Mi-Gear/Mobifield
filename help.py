@@ -362,12 +362,6 @@ def add_to_trash(id,msg_id):
     cursor.execute("insert into trash values (?, ?)",(id,msg_id))
     conn.commit()
 
-@prn
-async def profile_function(call:Pepe):
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = "Рюкзак",callback_data = "inventory")]])
-    player = get_player(call.get_user_id())
-    await call.send_message(f"Имя: {player.name}\nЗолото: 0\nКласс: {player.cls}",reply_markup=kb)
-
 def get_inventory(id):
     cursor.execute(f"SELECT * FROM INVENTORY WHERE PL_ID = ?",(id,))
     return cursor.fetchall()

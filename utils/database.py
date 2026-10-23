@@ -29,6 +29,19 @@ class PlayerModel(Base):
     gold: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
+class PlayerStatsModel(Base):
+    __tablename__ = "player_stats"
+
+    player_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True
+    )
+    strength: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    agility: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    endurance: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    luck: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    points: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
+
+
 class FSMModel(Base):
     __tablename__ = "fsm_states"
 
@@ -105,6 +118,62 @@ async def add_player(player: Any) -> None:
             logger.info("Registered player id=%s", player.id)
         else:
             logger.debug("Player already exists id=%s", player.id)
+
+
+async def initialize_player_stats(player_id: int, points: int = 10) -> None:
+    """Создаёт базовые характеристики игрока, если их ещё нет."""
+    async with Session() as session:
+        stats = await session.get(PlayerStatsModel, player_id)
+        if stats is None:
+            session.add(PlayerStatsModel(player_id=player_id, points=points))
+            await session.commit()
+
+
+async def get_player_stats(player_id: int) -> dict[str, int]:
+    """Возвращает характеристики и оставшиеся очки игрока."""
+    async with Session() as session:
+        stats = await session.get(PlayerStatsModel, player_id)
+        if stats is None:
+            stats = PlayerStatsModel(player_id=player_id, points=10)
+            session.add(stats)
+            await session.commit()
+            await session.refresh(stats)
+        return {
+            "strength": stats.strength,
+            "agility": stats.agility,
+            "endurance": stats.endurance,
+            "luck": stats.luck,
+            "points": stats.points,
+        }
+
+
+async def allocate_stat_point(player_id: int, stat_name: str) -> dict[str, int]:
+    """Добавляет одно очко к характеристике, если очки ещё остались."""
+    allowed_stats = {"strength", "agility", "endurance", "luck"}
+    if stat_name not in allowed_stats:
+        raise ValueError(f"Неизвестная характеристика: {stat_name}")
+
+    async with Session() as session:
+        stats = await session.get(PlayerStatsModel, player_id)
+        if stats is None:
+            stats = PlayerStatsModel(player_id=player_id, points=10)
+            session.add(stats)
+            await session.flush()
+
+        if stats.points > 0:
+            setattr(stats, stat_name, getattr(stats, stat_name) + 1)
+            stats.points -= 1
+            await session.commit()
+        else:
+            await session.rollback()
+
+        return {
+            "strength": stats.strength,
+            "agility": stats.agility,
+            "endurance": stats.endurance,
+            "luck": stats.luck,
+            "points": stats.points,
+        }
 
 
 async def delete_messages(player_id: int, bot) -> None:

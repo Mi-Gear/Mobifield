@@ -8,9 +8,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 logger = logging.getLogger(__name__)
 
-# Всегда используем файл рядом с этим модулем, независимо от рабочей директории запуска.
-DB_PATH = Path(__file__).resolve().with_name("db.sqlite")
-DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
+DATABASE_URL = "sqlite+aiosqlite:///utils/db.sqlite"
+Path("utils").mkdir(parents=True, exist_ok=True)
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -83,7 +82,7 @@ async def init_db() -> None:
         logger.info("SQLAlchemy: таблица inventory подключена")
     else:
         logger.warning("Таблица inventory пока отсутствует; операции с инвентарём недоступны")
-    logger.info("SQLAlchemy database initialized: %s", DB_PATH)
+    logger.info("SQLAlchemy database initialized")
 
 
 async def get_player(player_id: int):

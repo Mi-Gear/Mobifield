@@ -1,0 +1,143 @@
+import logging
+from pathlib import Path
+from typing import Any
+
+from sqlalchemy import Integer, String, Table, Column, MetaData, select, delete
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+logger = logging.getLogger(__name__)
+
+DATABASE_URL = "sqlite+aiosqlite:///utils/db.sqlite"
+Path("utils").mkdir(parents=True, exist_ok=True)
+
+engine = create_async_engine(DATABASE_URL, echo=False)
+Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class PlayerModel(Base):
+    __tablename__ = "players"
+
+    id: Mapped[int] = mapped_column("ID", Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    lvl: Mapped[int] = mapped_column("level", Integer, default=1, nullable=False)
+    exp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    gold: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class TrashModel(Base):
+    __tablename__ = "trash"
+
+    id: Mapped[int] = mapped_column("ID", Integer, primary_key=True)
+    msg_id: Mapped[int] = mapped_column("msg_id", Integer, primary_key=True)
+
+
+_inventory_metadata = MetaData()
+_inventory_table: Table | None = None
+
+
+async def init_db() -> None:
+    """Создаёт недостающие ORM-таблицы и подключает существующую таблицу inventory."""
+    global _inventory_table
+
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+        await connection.run_sync(
+            _inventory_metadata.reflect,
+            only=["inventory"],
+        )
+
+    _inventory_table = _inventory_metadata.tables.get("inventory")
+    if _inventory_table is not None:
+        logger.info("SQLAlchemy: таблица inventory подключена")
+    else:
+        logger.warning("Таблица inventory пока отсутствует; операции с инвентарём недоступны")
+    logger.info("SQLAlchemy database initialized")
+
+
+async def get_player(player_id: int):
+    from utils.player import player as Player
+
+    async with Session() as session:
+        record = await session.get(PlayerModel, player_id)
+        if record is None:
+            return None
+        result = Player()
+        result.id = record.id
+        result.name = record.name
+        result.lvl = record.lvl
+        result.exp = record.exp
+        result.gold = record.gold
+        return result
+
+
+async def add_player(player: Any) -> None:
+    async with Session() as session:
+        record = await session.get(PlayerModel, player.id)
+        if record is None:
+            session.add(
+                PlayerModel(
+                    id=player.id,
+                    name=player.name,
+                    lvl=getattr(player, "lvl", 1),
+                    exp=getattr(player, "exp", 0),
+                    gold=getattr(player, "gold", 0),
+                )
+            )
+            await session.commit()
+            logger.info("Registered player id=%s", player.id)
+        else:
+            logger.debug("Player already exists id=%s", player.id)
+
+
+async def delete_messages(player_id: int, bot) -> None:
+    async with Session() as session:
+        records = (await session.scalars(
+            select(TrashModel).where(TrashModel.id == player_id)
+        )).all()
+        for record in records:
+            try:
+                await bot.delete_message(chat_id=record.id, message_id=record.msg_id)
+            except Exception:
+                logger.exception(
+                    "Could not delete tracked message chat_id=%s message_id=%s",
+                    record.id,
+                    record.msg_id,
+                )
+            await session.delete(record)
+        await session.commit()
+
+
+async def add_to_trash(player_id: int, msg_id: int) -> None:
+    async with Session() as session:
+        session.add(TrashModel(id=player_id, msg_id=msg_id))
+        await session.commit()
+
+
+async def get_inventory(player_id: int) -> list[tuple]:
+    if _inventory_table is None:
+        logger.warning("Cannot load inventory: table inventory does not exist")
+        return []
+
+    player_column = next(
+        (column for column in _inventory_table.columns
+         if column.name.lower() == "pl_id"),
+        None,
+    )
+    if player_column is None:
+        raise RuntimeError("В таблице inventory не найден столбец PL_ID")
+
+    async with engine.connect() as connection:
+        result = await connection.execute(
+            select(_inventory_table).where(player_column == player_id)
+        )
+        return [tuple(row) for row in result.fetchall()]
+
+
+async def close_db() -> None:
+    await engine.dispose()
+    logger.info("SQLAlchemy engine closed")

@@ -9,7 +9,7 @@ outside_dialog = dialog["outside"]
 out = Router()
 
 @prn
-@out.callback_query(StateFilter("town") & (F.data=="outside"))
+@out.callback_query(StateFilter("town"), F.data == "outside")
 @pepe_handler
 async def crossroads(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
@@ -17,8 +17,7 @@ async def crossroads(message:Pepe,state:FSMContext):
     await message.send_message(text = outside_dialog["crossroads"], reply_markup=outside_keyboard(get_player(message.get_user_id()).lvl))
 
 @prn
-@out.callback_query(StateFilter("crossroads"))
-@out.callback_query(StateFilter("crossroads") & (F.data.startswith("enter_")))
+@out.callback_query(StateFilter("crossroads"), F.data.startswith("enter_"))
 @pepe_handler
 async def enter_(message:Pepe,state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)

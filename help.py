@@ -268,14 +268,23 @@ class Pepe:
 
 def pepe_handler(func: Callable) -> Callable:
     """
-    Оборачивает Message или CallbackQuery в Pepe и передаёт обработчику.
+    Оборачивает Message или CallbackQuery в Pepe.
 
-    Не отвечает на callback автоматически: обработчик сам решает, когда
-    вызвать event.answer_callback(), чтобы не мешать alert-ответам и
-    не отвечать дважды на один callback.
+    Для CallbackQuery автоматически вызывает callback.answer() перед
+    запуском обработчика, чтобы Telegram убирал индикатор загрузки.
+    Обработчик при необходимости может вызвать answer_callback() повторно
+    с текстом/alert, но Telegram может уже считать callback отвеченным.
     """
     @wraps(func)
     async def wrapper(source: Message | CallbackQuery, *args, **kwargs):
+        if isinstance(source, CallbackQuery):
+            try:
+                await source.answer()
+            except Exception as e:
+                # Не блокируем обработчик, если callback уже подтверждён
+                # или Telegram не смог принять answer.
+                print(f"Ошибка при автоматическом answer callback: {e}")
+
         return await func(Pepe(source), *args, **kwargs)
 
     return wrapper

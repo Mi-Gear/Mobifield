@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery, Message, User,Chat
 import sqlite3
 from utils.player import player as pl
 from typing import Union, Optional
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage
 bot = Bot(token = TOKEN())
 
 town_kb = InlineKeyboardMarkup(inline_keyboard=
@@ -320,15 +320,29 @@ def get_player(id):
         return None
     player.id = data[0]
     player.name = data[1]
-    player.cls = data[2]
+    player.lvl = data[2]
+    player.exp = data[3]
+    player.gold = data[4]
     return player
+
+def outside_keyboard(lvl):
+    kb = InlineKeyboardMarkup(inline_keyboard=
+            [
+                [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
+            ]
+        )
+    if lvl >= 5:
+        kb.inline_keyboard.append([InlineKeyboardButton(text="Поля",callback_data="enter_field")])
+    kb.inline_keyboard.append([InlineKeyboardButton(text="Назад",callback_data="back_town")])
+    return kb
+
 
 def add_player(player: pl):
     print(player.id)
     cursor.execute(f"select * from players where ID = {player.id}")
     data = cursor.fetchone()
     if data is None:
-        cursor.execute(f"INSERT INTO players (ID, name, class) values (?, ?, ?)",(player.id,player.name,player.cls))
+        cursor.execute(f"INSERT INTO players (ID, name,exp,level,gold) values (?, ?, ?, ?, ?)",(player.id,player.name,player.exp,player.lvl,player.gold))
         conn.commit()
 
 async def delete_messages(id):
@@ -342,18 +356,6 @@ async def delete_messages(id):
 
 def profile(id):
     return get_player(id)
-
-async def edit_profile_message(id,m_id):
-    profile_text = "Авантюрист: {name}\n\nУровень: 1\nЗолото: 0\nРепутация: 0\n"
-    prof = profile(id)
-    try:
-        await bot.edit_message_text(text=profile_text.format(name=prof[0]),chat_id=id, message_id=m_id)
-    except:
-        try:
-            await bot.delete_message(chat_id=id,message_id=m_id)
-        except:
-            pass
-        await bot.send_message(text=profile_text.format(name=prof[0]),chat_id=id)
         
 
 def add_to_trash(id,msg_id):

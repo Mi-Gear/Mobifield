@@ -29,6 +29,15 @@ class PlayerModel(Base):
     gold: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
+class FSMModel(Base):
+    __tablename__ = "fsm_states"
+
+    chat_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    state: Mapped[str | None] = mapped_column(String, nullable=True)
+    data: Mapped[str] = mapped_column(String, default="{}", nullable=False)
+
+
 class TrashModel(Base):
     __tablename__ = "trash"
 

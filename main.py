@@ -4,6 +4,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from aiogram import Dispatcher
+from utils.database import init_db, close_db
 
 from utils.str import SQLiteStorage
 from help import bot
@@ -40,10 +41,12 @@ twn.include_router(out)
 
 
 async def on_startup() -> None:
+    await init_db()
     logger.info("Бот запускается")
 
 
 async def on_shutdown() -> None:
+    await close_db()
     logger.info("Бот останавливается")
 
 

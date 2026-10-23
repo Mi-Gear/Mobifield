@@ -20,280 +20,264 @@ town_kb = InlineKeyboardMarkup(inline_keyboard=
     )
 
 class Pepe:
+    """
+    Обёртка над aiogram.types.Message или CallbackQuery.
 
+    is_message / is_callback — булевы поля, определяющие тип события.
+    message / callback_query — исходный объект только соответствующего типа.
+    Поля остальных типов не подменяются искусственными значениями.
     """
-    Унифицированный класс для работы с Message и CallbackQuery
-    """
-    
-    def __init__(self, source: Union[Message, CallbackQuery]):
+
+    def __init__(self, source: Message | CallbackQuery):
+        if isinstance(source, Message):
+            self.is_message = True
+            self.is_callback = False
+        elif isinstance(source, CallbackQuery):
+            self.is_message = False
+            self.is_callback = True
+        else:
+            raise TypeError(
+                "Pepe ожидает aiogram.types.Message или CallbackQuery, "
+                f"получено {type(source).__name__}"
+            )
+
         self._source = source
-        self._is_callback = isinstance(source, CallbackQuery)
-        self.bot = bot
-        # Основные поля
-        self.user: User = self._get_user()
-        self.chat: Optional[Chat] = self._get_chat()
-        self.message_id: int = self._get_message_id()
-        self.text: Optional[str] = self._get_text()
-        self.original_message: Optional[Message] = self._get_original_message()
-        
-        # Дополнительные поля для callback
-        self.callback_data: Optional[str] = self._get_callback_data()
-        self.callback_id: Optional[str] = self._get_callback_id()
-        self.callback_from: Optional[User] = self._get_callback_from()
-        self.callback_message: Optional[Message] = self._get_callback_message()
-        self.callback_chat_instance: Optional[str] = self._get_callback_chat_instance()
-        
-        # Данные из callback (если есть)
-        self.data: Optional[Any] = self._parse_callback_data()
-        
-        # Дополнительные параметры
-        self.inline_message_id: Optional[str] = self._get_inline_message_id()
-        self.guild_id: Optional[int] = self._get_guild_id()
-        
-    def _get_user(self) -> User:
-        """Получить пользователя"""
-        if self._is_callback:
-            return self._source.from_user
-        return self._source.from_user
-    
-    def _get_chat(self) -> Optional[Chat]:
-        """Получить чат"""
-        if self._is_callback:
-            return self._source.message.chat if self._source.message else None
-        return self._source.chat
-    
-    def _get_message_id(self) -> int:
-        """Получить ID сообщения"""
-        if self._is_callback:
-            return self._source.message.message_id if self._source.message else 0
-        return self._source.message_id
-    
-    def _get_text(self) -> Optional[str]:
-        """Получить текст сообщения или callback_data"""
-        if self._is_callback:
-            return self._source.data
-        return self._source.text
-    
-    def _get_original_message(self) -> Optional[Message]:
-        """Получить оригинальное сообщение (для callback)"""
-        if self._is_callback:
-            return self._source.message
+        self.bot = source.bot
+
+    @property
+    def source(self) -> Message | CallbackQuery:
+        """Исходный объект Telegram без изменений."""
         return self._source
-    
-    def _get_callback_data(self) -> Optional[str]:
-        """Получить данные callback"""
-        if self._is_callback:
-            return self._source.data
-        return None
-    
-    def _get_callback_id(self) -> Optional[str]:
-        """Получить ID callback"""
-        if self._is_callback:
-            return self._source.id
-        return None
-    
-    def _get_callback_from(self) -> Optional[User]:
-        """Получить пользователя, вызвавшего callback"""
-        if self._is_callback:
-            return self._source.from_user
-        return None
-    
-    def _get_callback_message(self) -> Optional[Message]:
-        """Получить сообщение, к которому привязан callback"""
-        if self._is_callback:
-            return self._source.message
-        return None
-    
-    def _get_callback_chat_instance(self) -> Optional[str]:
-        """Получить экземпляр чата callback"""
-        if self._is_callback:
-            return self._source.chat_instance
-        return None
-    
-    def _get_inline_message_id(self) -> Optional[str]:
-        """Получить ID инлайн сообщения"""
-        if self._is_callback:
-            return self._source.inline_message_id
-        return None
-    
-    def _get_guild_id(self) -> Optional[int]:
-        """Получить ID гильдии (для Telegram)"""
-        # Для совместимости с другими платформами
-        return None
-    
-    def _parse_callback_data(self) -> Optional[Any]:
+
+    @property
+    def message(self) -> Message | None:
+        """Исходное Message; None, если событие — CallbackQuery."""
+        return self._source if self.is_message else None
+
+    @property
+    def callback_query(self) -> CallbackQuery | None:
+        """Исходное CallbackQuery; None, если событие — Message."""
+        return self._source if self.is_callback else None
+
+    def __getattr__(self, name: str) -> Any:
         """
-        Парсинг данных callback.
-        Можно переопределить для поддержки JSON или других форматов.
+        Прозрачно проксирует поля и методы к исходному объекту.
+        Поэтому Message.text доступно для Message, а CallbackQuery.data —
+        для CallbackQuery. Несуществующие у типа поля вызовут AttributeError.
         """
-        if not self._is_callback or not self._source.data:
+        return getattr(self._source, name)
+
+    @property
+    def user(self) -> User:
+        return self._source.from_user
+
+    @property
+    def user_id(self) -> int:
+        return self.user.id
+
+    @property
+    def chat(self) -> Chat | None:
+        if self.is_message:
+            return self._source.chat
+        callback = self._source
+        return callback.message.chat if callback.message else None
+
+    @property
+    def chat_id(self) -> int | None:
+        chat = self.chat
+        return chat.id if chat else None
+
+    @property
+    def message_id(self) -> int | None:
+        if self.is_message:
+            return self._source.message_id
+        callback = self._source
+        return callback.message.message_id if callback.message else None
+
+    # Совместимость с существующими обработчиками проекта.
+
+    @property
+    def original_message(self) -> Message | None:
+        if self.is_message:
+            return self._source
+        return self._source.message
+
+    @property
+    def callback_data(self) -> str | None:
+        return self._source.data if self.is_callback else None
+
+    @property
+    def callback_id(self) -> str | None:
+        return self._source.id if self.is_callback else None
+
+    @property
+    def callback_from(self) -> User | None:
+        return self._source.from_user if self.is_callback else None
+
+    @property
+    def callback_message(self) -> Message | None:
+        return self._source.message if self.is_callback else None
+
+    @property
+    def callback_chat_instance(self) -> str | None:
+        return self._source.chat_instance if self.is_callback else None
+
+    @property
+    def inline_message_id(self) -> str | None:
+        return self._source.inline_message_id if self.is_callback else None
+
+    @property
+    def data(self) -> Any:
+        """JSON из callback_data, если оно является корректным JSON; иначе строка."""
+        if not self.is_callback or not self._source.data:
             return None
-        
+
         try:
-            import json
-            # Пробуем парсить как JSON
             return json.loads(self._source.data)
         except (json.JSONDecodeError, TypeError):
-            # Если не JSON, возвращаем как есть
             return self._source.data
-    
-    # Унифицированные методы
-    
-    async def answer(self, text: str, **kwargs):
-        """
-        Ответить на сообщение
-        """
-        if self._is_callback:
-            if kwargs.get('show_alert', False):
-                await self._source.answer(text, show_alert=True, **kwargs)
-            else:
-                await self._source.message.answer(text, **kwargs)
-        else:
-            await self._source.answer(text, **kwargs)
-    
-    async def reply(self, text: str, **kwargs):
-        """
-        Ответить с reply
-        """
-        if self._is_callback:
-            await self._source.message.reply(text, **kwargs)
-        else:
-            await self._source.reply(text, **kwargs)
-    
-    async def edit(self, text: str, **kwargs):
-        """
-        Отредактировать сообщение
-        """
-        if self._is_callback:
-            await self._source.message.edit_text(text, **kwargs)
-        else:
-            await self._source.edit_text(text, **kwargs)
-    
-    async def delete(self):
-        """Удалить сообщение"""
-        if self._is_callback:
-            if self._source.message:
-                await self._source.message.delete()
-        else:
-            await self._source.delete()
-    
-    async def send_photo(self, photo, caption: str = "", **kwargs):
-        """Отправить фото"""
-        if self._is_callback:
-            return await self._source.message.answer_photo(photo, caption=caption, **kwargs)
-        return await self._source.answer_photo(photo, caption=caption, **kwargs)
-    
-    async def send_document(self, document, caption: str = "", **kwargs):
-        """Отправить документ"""
-        if self._is_callback:
-            return await self._source.message.answer_document(document, caption=caption, **kwargs)
-        return await self._source.answer_document(document, caption=caption, **kwargs)
-    
-    async def answer_callback(self, text: str = "", show_alert: bool = False, **kwargs):
-        """Ответить на callback (только для callback)"""
-        if self._is_callback:
-            await self._source.answer(text, show_alert=show_alert, **kwargs)
-    
-    async def send_message(self, text: str, **kwargs):
-        """Отправить сообщение в тот же чат"""
-        if self._is_callback:
-            return await self._source.message.answer(text, **kwargs)
-        return await self._source.answer(text, **kwargs)
-    
-    # Дополнительные полезные методы
-    
+
     def get_user_id(self) -> int:
-        """Получить ID пользователя"""
-        return self.user.id
-    
-    def is_callback(self) -> bool:
-        """Проверить, является ли источник callback'ом"""
-        return self._is_callback
-    
-    def is_message(self) -> bool:
-        """Проверить, является ли источник сообщением"""
-        return not self._is_callback
-    
-    def get_source(self) -> Union[Message, CallbackQuery]:
-        """Получить оригинальный источник"""
+        return self.user_id
+
+    def get_source(self) -> Message | CallbackQuery:
         return self._source
-    
-    def get_callback_data(self) -> Optional[Any]:
-        """Получить данные callback в распарсенном виде"""
+
+    def get_callback_data(self) -> Any:
         return self.data
-    
-    def get_raw_callback_data(self) -> Optional[str]:
-        """Получить сырые данные callback"""
+
+    def get_raw_callback_data(self) -> str | None:
         return self.callback_data
-    
+
     def is_inline(self) -> bool:
-        """Проверить, является ли сообщение инлайн"""
-        if self._is_callback:
-            return self._source.inline_message_id is not None
-        return False
-    
+        return self.is_callback and self._source.inline_message_id is not None
+
+    async def answer_callback(
+        self,
+        text: str = "",
+        show_alert: bool = False,
+        **kwargs,
+    ):
+        """Ответить на CallbackQuery и закрыть индикатор загрузки."""
+        if not self.is_callback:
+            raise TypeError("answer_callback доступен только для CallbackQuery")
+        return await self._source.answer(
+            text,
+            show_alert=show_alert,
+            **kwargs,
+        )
+
+    async def answer(self, text: str = "", **kwargs):
+        """
+        Для Message — отправить ответ на сообщение.
+        Для CallbackQuery — отправить новое сообщение в привязанный чат.
+        Для ответа на сам callback используйте answer_callback().
+        """
+        if self.is_message:
+            return await self._source.answer(text, **kwargs)
+        if self._source.message:
+            return await self._source.message.answer(text, **kwargs)
+        raise TypeError(
+            "У inline CallbackQuery нет обычного чата; "
+            "для отправки сообщения используйте bot.send_message с chat_id"
+        )
+
+    async def send_message(self, text: str, **kwargs):
+        return await self.answer(text, **kwargs)
+
+    async def reply(self, text: str, **kwargs):
+        if self.is_message:
+            return await self._source.reply(text, **kwargs)
+        if self._source.message:
+            return await self._source.message.reply(text, **kwargs)
+        raise TypeError("У inline CallbackQuery нет обычного сообщения для reply")
+
+    async def send_photo(self, photo, caption: str = "", **kwargs):
+        if self.is_message:
+            return await self._source.answer_photo(
+                photo=photo, caption=caption, **kwargs
+            )
+        if self._source.message:
+            return await self._source.message.answer_photo(
+                photo=photo, caption=caption, **kwargs
+            )
+        raise TypeError("У inline CallbackQuery нет обычного чата для отправки фото")
+
+    async def send_document(self, document, caption: str = "", **kwargs):
+        if self.is_message:
+            return await self._source.answer_document(
+                document=document, caption=caption, **kwargs
+            )
+        if self._source.message:
+            return await self._source.message.answer_document(
+                document=document, caption=caption, **kwargs
+            )
+        raise TypeError(
+            "У inline CallbackQuery нет обычного чата для отправки документа"
+        )
+
+    async def edit(self, text: str, **kwargs):
+        if self.is_message:
+            return await self._source.edit_text(text, **kwargs)
+        if self._source.message:
+            return await self._source.message.edit_text(text, **kwargs)
+        raise TypeError("У inline CallbackQuery нет обычного сообщения для редактирования")
+
+    async def delete(self):
+        if self.is_message:
+            return await self._source.delete()
+        if self._source.message:
+            return await self._source.message.delete()
+        raise TypeError("У inline CallbackQuery нет обычного сообщения для удаления")
+
     async def edit_reply_markup(self, reply_markup=None):
-        """Изменить клавиатуру"""
-        if self._is_callback and self._source.message:
-            await self._source.message.edit_reply_markup(reply_markup=reply_markup)
-        else:
-            await self._source.edit_reply_markup(reply_markup=reply_markup)
-    
-    # Метод для получения данных в виде словаря
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Представить объект в виде словаря"""
-        return {
-            "user_id": self.user.id,
-            "user_name": self.user.full_name,
-            "chat_id": self.chat.id if self.chat else None,
+        if self.is_message:
+            return await self._source.edit_reply_markup(reply_markup=reply_markup)
+        if self._source.message:
+            return await self._source.message.edit_reply_markup(
+                reply_markup=reply_markup
+            )
+        raise TypeError(
+            "У inline CallbackQuery нет обычного сообщения для редактирования"
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        result = {
+            "is_message": self.is_message,
+            "is_callback": self.is_callback,
+            "user_id": self.user_id,
+            "chat_id": self.chat_id,
             "message_id": self.message_id,
-            "text": self.text,
-            "is_callback": self._is_callback,
-            "callback_data": self.callback_data,
-            "callback_id": self.callback_id,
-            "data": self.data,
         }
-    
-    # Магические методы
-    
-    def __str__(self):
-        callback_info = f", callback_data={self.callback_data}" if self._is_callback else ""
-        return f"Pepe(user_id={self.user.id}, text={self.text}{callback_info})"
-    
-    def __repr__(self):
-        return self.__str__()
+        if self.is_message:
+            result["text"] = self._source.text
+        else:
+            result["callback_data"] = self._source.data
+            result["callback_id"] = self._source.id
+        return result
+
+    def __repr__(self) -> str:
+        event_type = "Message" if self.is_message else "CallbackQuery"
+        details = (
+            f"text={self._source.text!r}"
+            if self.is_message
+            else f"data={self._source.data!r}"
+        )
+        return f"Pepe(type={event_type}, user_id={self.user_id}, {details})"
+
 
 def pepe_handler(func: Callable) -> Callable:
     """
-    Декоратор для обработчиков сообщений и callback'ов.
-    Автоматически оборачивает Message или CallbackQuery в объект Pepe.
-    Автоматически отвечает на callback, если это CallbackQuery.
-    
-    Пример использования:
-    @pepe_handler
-    async def start_command(pepe: Pepe):
-        await pepe.answer("Привет!")
-    
-    @pepe_handler
-    async def button_callback(pepe: Pepe):
-        await pepe.edit("Текст изменен")
+    Оборачивает Message или CallbackQuery в Pepe и передаёт обработчику.
+
+    Не отвечает на callback автоматически: обработчик сам решает, когда
+    вызвать event.answer_callback(), чтобы не мешать alert-ответам и
+    не отвечать дважды на один callback.
     """
     @wraps(func)
-    async def wrapper(source: Union[Message, CallbackQuery], *args, **kwargs) -> Any:
-        # Создаем объект Pepe из источника
-        pepe = Pepe(source)
-        
-        # Если это callback - автоматически отвечаем на него
-        if isinstance(source, CallbackQuery):
-            try:
-                await source.answer()
-            except Exception as e:
-                print(f"Ошибка при answer callback: {e}")
-        
-        # Вызываем функцию с Pepe
-        return await func(pepe, *args, **kwargs)
-    
+    async def wrapper(source: Message | CallbackQuery, *args, **kwargs):
+        return await func(Pepe(source), *args, **kwargs)
+
     return wrapper
 
 def prn(func):

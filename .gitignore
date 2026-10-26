@@ -12,3 +12,9 @@ token.txt
 
 # Database
 utils/db.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Runtime logs
+logs/*.log
+*.log

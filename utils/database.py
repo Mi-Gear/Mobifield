@@ -28,6 +28,15 @@ class PlayerModel(Base):
     exp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     gold: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
+class LocationRequirement(Base):
+    __tablename__ = "location_req"
+
+    location: Mapped[str] = mapped_column(String, primary_key=True)
+    fishing: Mapped[int] = mapped_column(Integer)
+    choping: Mapped[int] = mapped_column(Integer)
+    searching: Mapped[int] = mapped_column(Integer)
+    hunting: Mapped[int] = mapped_column(Integer)
+    mining: Mapped[int] = mapped_column(Integer)
 
 class PlayerStatsModel(Base):
     __tablename__ = "player_stats"
@@ -68,6 +77,7 @@ async def init_db() -> None:
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+
         table_names = await connection.run_sync(
             lambda sync_connection: inspect(sync_connection).get_table_names()
         )
@@ -99,6 +109,18 @@ async def get_player(player_id: int):
         result.exp = record.exp
         result.gold = record.gold
         return result
+
+async def get_loc_requir(location: str):
+    async with Session() as session:
+        record = await session.get(LocationRequirement,location)
+        result = {}
+        result['fishing'] = record.fishing
+        result['choping'] = record.choping
+        result['searching'] = record.searching
+        result['hunting'] = record.hunting
+        result['mining'] = record.mining
+        return result
+
 
 
 async def add_player(player: Any) -> None:

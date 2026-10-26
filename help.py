@@ -4,12 +4,12 @@ from aiogram import Bot
 from utils.config import TOKEN
 from functools import wraps
 from typing import Callable, Optional,Dict, Any
-from aiogram.types import CallbackQuery, Message, User,Chat
+from aiogram.types import CallbackQuery, Message, User, Chat
 from utils.player import player as pl
 from utils.database import (
     get_player, add_player, get_inventory,
     delete_messages as _delete_messages,
-    add_to_trash,
+    add_to_trash, get_loc_requir
 )
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage
@@ -295,15 +295,36 @@ def pepe_handler(func: Callable) -> Callable:
 
 
 def outside_keyboard(lvl):
-    kb = InlineKeyboardMarkup(inline_keyboard=
-            [
-                [InlineKeyboardButton(text="Лес",callback_data="enter_forest")],
-            ]
-        )
-    if lvl >= 5:
-        kb.inline_keyboard.append([InlineKeyboardButton(text="Поля",callback_data="enter_field")])
-    kb.inline_keyboard.append([InlineKeyboardButton(text="Назад",callback_data="back_town")])
-    return kb
+    buttons = []
+    if lvl >= 1:
+        buttons.append([InlineKeyboardButton(text="Поля",callback_data="enter_field")])
+    if lvl >= 10:
+        buttons.append([InlineKeyboardButton(text="Лес",callback_data="enter_forest")])
+    if lvl >= 20:
+        buttons.append([InlineKeyboardButton(text="Руины",callback_data="enter_ruins")])
+    if lvl >= 30:
+        buttons.append([InlineKeyboardButton(text="Темнолесье",callback_data="enter_darkforest")])            
+
+    buttons.append([InlineKeyboardButton(text="Назад",callback_data="back_town")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+async def location_keyboard(location, lvl):
+    loc = await get_loc_requir(location)
+    print(loc)
+    buttons = []
+    if lvl >= loc['fishing'] and loc['fishing']!=-1:
+        buttons.append([InlineKeyboardButton(text="Рыбалка",callback_data="run_fishing")])
+    if lvl >= loc['choping'] and loc['choping']!=-1:
+        buttons.append([InlineKeyboardButton(text="Рубка",callback_data="run_choping")])
+    if lvl >= loc['searching'] and loc['searching']!=-1:
+        buttons.append([InlineKeyboardButton(text="Исследование",callback_data="run_searching")])
+    if lvl >= loc['hunting'] and loc['hunting']!=-1:
+        buttons.append([InlineKeyboardButton(text="Охота",callback_data="run_hunting")])            
+    if lvl >= loc['mining'] and loc['mining']!=-1:
+        buttons.append([InlineKeyboardButton(text="Добыча",callback_data="run_mining")])  
+
+    buttons.append([InlineKeyboardButton(text="Назад",callback_data="back_crossroads")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def profile_message(func: Callable) -> Callable:
     """Создаёт карточку профиля или обновляет уже отправленную rich message."""

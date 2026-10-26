@@ -25,12 +25,7 @@ async def enter_(message:Pepe,state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     cbd = message.get_callback_data()
     await state.set_state(cbd)
-    kb = InlineKeyboardMarkup(inline_keyboard=
-            [
-                [InlineKeyboardButton(text="Обыск",callback_data=cbd.replace("enter_","search_"))],
-                [InlineKeyboardButton(text="Назад",callback_data="back_crossroads")]
-            ]
-        )
+    kb = await location_keyboard(cbd.split("enter_")[1],(await get_player(message.get_user_id())).lvl)
     await message.send_message(text = outside_dialog[cbd.split("enter_")[1]], reply_markup=kb)
     
 @prn
@@ -46,7 +41,7 @@ async def back_(message:Pepe,state:FSMContext):
             photo = FSInputFile("images/town.png")
             await message.send_photo(caption=dialog["town"][0],photo=photo,reply_markup=town_kb)
         case "crossroads":
-            await state.set_state("back_crossroads")
+            await state.set_state("crossroads")
             await message.send_message(text=outside_dialog["crossroads"],reply_markup=outside_keyboard((await get_player(message.get_user_id())).lvl))
 
 

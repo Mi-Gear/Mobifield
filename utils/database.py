@@ -8,8 +8,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = "sqlite+aiosqlite:///utils/db.sqlite"
-Path("utils").mkdir(parents=True, exist_ok=True)
+DB_PATH = Path(__file__).resolve().parent / "db.sqlite"
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

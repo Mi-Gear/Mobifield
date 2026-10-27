@@ -6,10 +6,11 @@ from functools import wraps
 from typing import Callable, Optional,Dict, Any
 from aiogram.types import CallbackQuery, Message, User, Chat
 from utils.player import player as pl
+import asyncio, random
 from utils.database import (
     get_player, add_player, get_inventory,
     delete_messages as _delete_messages,
-    add_to_trash, get_loc_requir
+    add_to_trash, get_loc_requir,get_run_loot, add_to_inventory
 )
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage
@@ -313,15 +314,15 @@ async def location_keyboard(location, lvl):
     print(loc)
     buttons = []
     if lvl >= loc['fishing'] and loc['fishing']!=-1:
-        buttons.append([InlineKeyboardButton(text="Рыбалка",callback_data="run_fishing")])
+        buttons.append([InlineKeyboardButton(text="🎣 Рыбалка",callback_data="run_fishing")])
     if lvl >= loc['choping'] and loc['choping']!=-1:
-        buttons.append([InlineKeyboardButton(text="Рубка",callback_data="run_choping")])
+        buttons.append([InlineKeyboardButton(text="🪓 Рубка",callback_data="run_choping")])
     if lvl >= loc['searching'] and loc['searching']!=-1:
-        buttons.append([InlineKeyboardButton(text="Исследование",callback_data="run_searching")])
+        buttons.append([InlineKeyboardButton(text="🔎 Исследование",callback_data="run_searching")])
     if lvl >= loc['hunting'] and loc['hunting']!=-1:
-        buttons.append([InlineKeyboardButton(text="Охота",callback_data="run_hunting")])            
+        buttons.append([InlineKeyboardButton(text="🏹 Охота",callback_data="run_hunting")])            
     if lvl >= loc['mining'] and loc['mining']!=-1:
-        buttons.append([InlineKeyboardButton(text="Добыча",callback_data="run_mining")])  
+        buttons.append([InlineKeyboardButton(text="⛏️ Добыча",callback_data="run_mining")])  
 
     buttons.append([InlineKeyboardButton(text="Назад",callback_data="back_crossroads")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -399,15 +400,5 @@ async def delete_messages(player_id):
 
 async def profile(player_id):
     return await get_player(player_id)
-
-
-@prn
-async def inventory(event:Pepe):
-    inv = await get_inventory(event.get_user_id())
-    kbt = []
-    for i in inv:
-        kbt.append([InlineKeyboardButton(text = i[5] +" "+ i[3],callback_data="inv_item_"+i[1])])
-    kb = InlineKeyboardMarkup(inline_keyboard=kbt)
-    await event.send_message("Моя сумка полна всяких интересностей. Ну-ка...",reply_markup=kb)
 
             

@@ -29,6 +29,17 @@ class PlayerModel(Base):
     exp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     gold: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
+class ItemBase(Base):
+    __tablename__ = "item_base"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    cost: Mapped[int] = mapped_column(Integer)
+    location: Mapped[str] = mapped_column(String)
+    type: Mapped[str] = mapped_column(String)
+    rarity: Mapped[str] = mapped_column(String)
+
+
 class LocationRequirement(Base):
     __tablename__ = "location_req"
 
@@ -51,6 +62,12 @@ class PlayerStatsModel(Base):
     luck: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     points: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
 
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    pl_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 class FSMModel(Base):
     __tablename__ = "fsm_states"
@@ -95,6 +112,15 @@ async def init_db() -> None:
         logger.warning("Таблица inventory пока отсутствует; операции с инвентарём недоступны")
     logger.info("SQLAlchemy database initialized")
 
+async def add_to_inventory(player_id: int, items: dict[str, int]) -> None:
+    async with Session() as session:
+        for item_id, count in items.items():
+            record = await session.get(Inventory, (player_id, item_id))
+            if record is None:
+                session.add(Inventory(pl_id=player_id, id=item_id, count=count))
+            else:
+                record.count += count
+        await session.commit()
 
 async def get_player(player_id: int):
     from utils.player import player as Player
@@ -152,23 +178,11 @@ async def initialize_player_stats(player_id: int, points: int = 10) -> None:
             await session.commit()
 
 
-async def get_player_stats(player_id: int) -> dict[str, int]:
-    """Возвращает характеристики и оставшиеся очки игрока."""
+async def get_run_loot(location,type):
     async with Session() as session:
-        stats = await session.get(PlayerStatsModel, player_id)
-        if stats is None:
-            stats = PlayerStatsModel(player_id=player_id, points=10)
-            session.add(stats)
-            await session.commit()
-            await session.refresh(stats)
-        return {
-            "strength": stats.strength,
-            "agility": stats.agility,
-            "endurance": stats.endurance,
-            "luck": stats.luck,
-            "points": stats.points,
-        }
-
+        result = await session.execute(select(ItemBase).where(ItemBase.location == location,ItemBase.type == type))
+        loot = result.scalars().all()
+        return loot
 
 async def allocate_stat_point(player_id: int, stat_name: str) -> dict[str, int]:
     """Добавляет одно очко к характеристике, если очки ещё остались."""

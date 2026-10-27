@@ -2,7 +2,7 @@ import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
+from utils.LockMiddleware import ExplorationLockMiddleware
 from aiogram import Dispatcher
 from utils.database import init_db, close_db
 
@@ -34,6 +34,7 @@ logger = logging.getLogger("mobifield")
 
 storage = SQLiteStorage()
 dp = Dispatcher(bot=bot, storage=storage)
+dp.update.outer_middleware(ExplorationLockMiddleware())
 
 dp.include_router(reg)
 reg.include_router(twn)
@@ -48,8 +49,7 @@ async def on_startup() -> None:
 async def on_shutdown() -> None:
     await close_db()
     logger.info("Бот останавливается")
-
-
+    
 async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)

@@ -54,40 +54,90 @@ async def run_(message:Pepe,state:FSMContext):
     state_ = await state.get_state()
     location = state_.split("enter_")[1]
     type = message.callback_query.data.split("run_")[1]
-    loot = await get_run_loot(location,type)
-    common, rare, epic, legendary = [],[],[],[]
+    loot = await get_run_loot(location, type)
+
+    common, rare, epic, legendary = [], [], [], []
+
     for item in loot:
         match item.rarity:
-            case 'common': common.append(item)
-            case 'rare': rare.append(item)
-            case 'epic': epic.append(item)
-            case 'legendary': legendary.append(item)
+            case "common":
+                common.append(item)
+            case "rare":
+                rare.append(item)
+            case "epic":
+                epic.append(item)
+            case "legendary":
+                legendary.append(item)
+
+    rarity_items = {
+        "common": common,
+        "rare": rare,
+        "epic": epic,
+        "legendary": legendary,
+    }
+
+    # Оставляем только редкости, в которых есть предметы
+    available_rarities = [
+        rarity
+        for rarity, items in rarity_items.items()
+        if items
+    ]
+
+    if not available_rarities:
+        await message.send_message(
+            text="Здесь пока нечего найти. Попробуйте исследовать другое место."
+        )
+        return
+
     seconds = 300
-    prt = "Вы рыбачите...\n\n"
-    await state.set_state('exploring')
+    prt = "Вы исследуете местность...\n\n"
+    await state.set_state("exploring")
     msg = await message.send_message(text=prt)
+
+    arr = {}
+
     try:
-        arr = dict()
-        text = msg.text
-        for i in range(math.floor(seconds/30)):
-            await asyncio.sleep(math.floor(seconds/10))
-            result = None
-            match random.choice(range(1,5)):
-                case 1: result = random.choice(common)
-                case 2: result = random.choice(rare)
-                case 3: result = random.choice(epic)
-                case 4: result = random.choice(legendary)
-            result.count = arr.get(result, 0) + 1
-            arr[result] = result.count
+        for _ in range(math.floor(seconds / 30)):
+            await asyncio.sleep(math.floor(seconds / 10))
+
+            match random.choice(available_rarities):
+                case "common":
+                    result = random.choice(common)
+                case "rare":
+                    result = random.choice(rare)
+                case "epic":
+                    result = random.choice(epic)
+                case "legendary":
+                    result = random.choice(legendary)
+
+            arr[result] = arr.get(result, 0) + 1
+
             res_text = prt
-            for i in arr.keys():
-                res_text += i.name + " + " + str(arr[i])+"\n"
+            for item, count in arr.items():
+                res_text += f"{item.name} + {count}\n"
+
             await msg.edit_text(res_text)
+
     finally:
-        res = {}
-        for i in arr:
-            res[i.id] = i.count
-        await add_to_inventory(message.get_user_id(),res)
+        res = {
+            item.id: count
+            for item, count in arr.items()
+        }
+
+        if res:
+            await add_to_inventory(message.get_user_id(), res)
+
         await state.set_state(state_)
-        await msg.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Завершить", callback_data=state_)]]))
+        await msg.edit_reply_markup(
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="Завершить",
+                            callback_data=state_,
+                        )
+                    ]
+                ]
+            )
+        )
 

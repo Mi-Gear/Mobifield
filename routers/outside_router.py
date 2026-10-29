@@ -90,7 +90,17 @@ async def run_(message:Pepe,state:FSMContext):
         return
 
     seconds = 300
-    prt = "Вы исследуете местность...\n\n"
+    match type:
+        case "fishing":
+            prt = "Вы рыбачите...\n\n"
+        case "hunting":
+            prt = "Вы охотитесь...\n\n"
+        case "choping":
+            prt = "Вы рубите деревья...\n\n"
+        case "mining":
+            prt = "Вы добываете руду...\n\n"
+        case "searching":
+            prt = "Вы ищете что-то интересное...\n\n"
     await state.set_state("exploring")
     msg = await message.send_message(text=prt)
 
@@ -114,7 +124,7 @@ async def run_(message:Pepe,state:FSMContext):
 
             res_text = prt
             for item, count in arr.items():
-                res_text += f"{item.name} + {count}\n"
+                res_text += f"+{count} {item.name}\n"
 
             await msg.edit_text(res_text)
 

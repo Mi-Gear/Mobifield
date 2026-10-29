@@ -76,6 +76,16 @@ async def run_(message:Pepe,state:FSMContext):
         "legendary": legendary,
     }
 
+    # Базовые веса редкостей: 60%, 25%, 12%, 3%.
+    # random.choices нормализует веса доступных редкостей,
+    # поэтому отсутствующие редкости перераспределяются автоматически.
+    rarity_weights = {
+        "common": 6000,
+        "rare": 2500,
+        "epic": 1200,
+        "legendary": 300,
+    }
+
     # Оставляем только редкости, в которых есть предметы
     available_rarities = [
         rarity
@@ -110,7 +120,13 @@ async def run_(message:Pepe,state:FSMContext):
         for _ in range(math.floor(seconds / 30)):
             await asyncio.sleep(math.floor(seconds / 10))
 
-            match random.choice(available_rarities):
+            selected_rarity = random.choices(
+                available_rarities,
+                weights=[rarity_weights[rarity] for rarity in available_rarities],
+                k=1,
+            )[0]
+
+            match selected_rarity:
                 case "common":
                     result = random.choice(common)
                 case "rare":

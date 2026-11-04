@@ -338,30 +338,42 @@ async def inventory_keyboard(player_id):
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def profile_message(func: Callable) -> Callable:
-    """Создаёт карточку профиля или обновляет уже отправленную rich message."""
+    """Создаёт карточку профиля и переключает её содержимое на инвентарь."""
+
     @wraps(func)
     async def wrapper(message: Pepe, state, *args, **kwargs):
-        player = await profile(message.get_user_id(),message.user.first_name)
+        callback_data = message.get_raw_callback_data()
         data = await state.get_data()
+
+        # Переключение представления хранится отдельно от FSM-состояния игры:
+        # поэтому открытие инвентаря не прерывает исследование/поиск.
+        if callback_data == "open_inventory":
+            data["inv_state"] = "inventory"
+        elif callback_data == "back_profile":
+            data["inv_state"] = "profile"
+
+        view = data.get("inv_state", "profile")
+        player_id = message.get_user_id()
+        player = await profile(player_id, message.user.first_name)
+
         with open("profile_text.txt", "r", encoding="utf-8") as file:
             profile_text = file.read()
-
         with open("level.json", "r", encoding="utf-8") as file:
             levels = json.load(file)
+
         need_xp = levels[str(player.lvl)]
-        pers = (((player.exp / need_xp) * 100) - (((player.exp / need_xp) * 100)) % 10) /10
-        repres = [1 if x <=pers else 0 for x in range(1,11)]
-        print(repres)
+        progress = max(0, min(100, player.exp / need_xp * 100))
+        filled = int(progress // 10)
+        repres = [1 if x <= filled else 0 for x in range(1, 11)]
+
         for i in range(len(repres)):
             match i:
                 case 0:
-                    repres[i] = '<tg-emoji emoji-id="5424864752243354510">🟨</tg-emoji>' if repres[i]==1 else '<tg-emoji emoji-id="5424762574971383104">⬛</tg-emoji>' 
+                    repres[i] = '<tg-emoji emoji-id="5424864752243354510">🟨</tg-emoji>' if repres[i] else '<tg-emoji emoji-id="5424762574971383104">⬛</tg-emoji>'
                 case 9:
-                    repres[i] = '<tg-emoji emoji-id="5424824959371355055">🟨</tg-emoji>' if repres[i]==1 else '<tg-emoji emoji-id="5425077709606791595">⬛</tg-emoji>'    
+                    repres[i] = '<tg-emoji emoji-id="5424824959371355055">🟨</tg-emoji>' if repres[i] else '<tg-emoji emoji-id="5425077709606791595">⬛</tg-emoji>'
                 case _:
-                    repres[i] = '<tg-emoji emoji-id="5424658336115105531">🟨</tg-emoji>' if repres[i]==1 else '<tg-emoji emoji-id="5427227061565562800">⬛</tg-emoji>'    
-                    
-        xp_bar = ''.join(repres)
+                    repres[i] = '<tg-emoji emoji-id="5424658336115105531">🟨</tg-emoji>' if repres[i] else '<tg-emoji emoji-id="5427227061565562800">⬛</tg-emoji>'
 
         rich_message = InputRichMessage(
             markdown=profile_text.format(
@@ -370,36 +382,44 @@ def profile_message(func: Callable) -> Callable:
                 lvl=player.lvl,
                 gold=player.gold,
                 need_xp=need_xp,
-                bar=xp_bar,
+                bar="".join(repres),
             )
         )
 
         profile_message_id = data.get("inv_id")
-
         if profile_message_id is None:
             sent = await message.bot.send_rich_message(
-                chat_id=message.get_user_id(),
+                chat_id=player_id,
                 rich_message=rich_message,
+                reply_markup=profile_keyboard(),
             )
-            await state.update_data(inv_id=str(sent.message_id))
-        else:
-            from aiogram.exceptions import TelegramBadRequest
-            try:
-                await message.bot.edit_message_text(
-                    rich_message=rich_message,
-                    chat_id=message.get_user_id(),
-                    message_id=int(profile_message_id),
-                    reply_markup= profile_keyboard()
-                )
-            except TelegramBadRequest as error:
-                if "message is not modified" not in error.message:
-                    raise
+            profile_message_id = str(sent.message_id)
+            await state.update_data(inv_id=profile_message_id)
 
-        await state.update_data(inv_state=str("profile"))
+        from aiogram.exceptions import TelegramBadRequest
+        try:
+            if view == "inventory":
+                await message.bot.edit_message_text(
+                    chat_id=player_id,
+                    message_id=int(profile_message_id),
+                    text="Ваш инвентарь:",
+                    reply_markup=await inventory_keyboard(player_id),
+                )
+            else:
+                await message.bot.edit_message_text(
+                    chat_id=player_id,
+                    message_id=int(profile_message_id),
+                    rich_message=rich_message,
+                    reply_markup=profile_keyboard(),
+                )
+        except TelegramBadRequest as error:
+            if "message is not modified" not in error.message:
+                raise
+
+        await state.update_data(inv_state=view)
         return await func(message, state, *args, **kwargs)
 
     return wrapper
-
 
 def prn(func):
     @functools.wraps(func)

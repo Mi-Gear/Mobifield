@@ -39,16 +39,11 @@ async def respawn(message: Pepe, state: FSMContext):
     await show_town(message, state)
 
 @prn
-@twn.callback_query(F.data == "open_inventory")
+@twn.callback_query(F.data.in_({"open_inventory", "back_profile"}))
 @pepe_handler
 @profile_message
-async def open_inventory(message: Pepe, state: FSMContext):
-    player_id = message.get_user_id()
-    keyboard = await inventory_keyboard(player_id)
-    await bot.edit_message_text(
-        chat_id=message.callback_from.id,
-        message_id=message.callback_message.message_id,
-        text="Ваш инвентарь:",
-        reply_markup=keyboard,
-    )
+async def switch_profile_view(message: Pepe, state: FSMContext):
+    # Переключение выполняется декоратором profile_message.
+    return
+
 

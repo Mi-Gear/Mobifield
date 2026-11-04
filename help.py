@@ -10,7 +10,7 @@ import asyncio, random
 from utils.database import (
     get_player, add_player, get_inventory,
     delete_messages as _delete_messages,
-    add_to_trash, get_loc_requir,get_run_loot, add_to_inventory
+    add_to_trash, get_loc_requir,get_run_loot, add_to_inventory, get_item
 )
 from typing import Union, Optional
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage
@@ -18,9 +18,7 @@ bot = Bot(token = TOKEN())
 
 town_kb = InlineKeyboardMarkup(inline_keyboard=
         [
-            [InlineKeyboardButton(text="Лицензия гильдии",callback_data="profile")],
             [InlineKeyboardButton(text="За город",callback_data="outside")],
-            [InlineKeyboardButton(text="Кузница",callback_data="smelt"),InlineKeyboardButton(text="В Яблочко!",callback_data="archer_shop"),InlineKeyboardButton(text = "Вжух!",callback_data="mage_shop")]
         ]
     )
 
@@ -327,22 +325,43 @@ async def location_keyboard(location, lvl):
     buttons.append([InlineKeyboardButton(text="Назад",callback_data="back_crossroads")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+def profile_keyboard():
+    buttons = [[InlineKeyboardButton(text="Инвентарь",callback_data="open_inventory")]]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+async def inventory_keyboard(player_id):
+    inventory = await get_inventory(player_id)
+    buttons = []
+    for item in inventory:
+        item_base = await get_item(item.id)
+        buttons.append([InlineKeyboardButton(text=f"{item_base.name} x{item.count}",callback_data=f"item_{item.id}")])
+    buttons.append([InlineKeyboardButton(text="Назад",callback_data="back_profile")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 def profile_message(func: Callable) -> Callable:
     """Создаёт карточку профиля или обновляет уже отправленную rich message."""
     @wraps(func)
     async def wrapper(message: Pepe, state, *args, **kwargs):
-        player = await profile(message.get_user_id())
-
+        player = await profile(message.get_user_id(),message.user.first_name)
+        data = await state.get_data()
         with open("profile_text.txt", "r", encoding="utf-8") as file:
             profile_text = file.read()
 
         with open("level.json", "r", encoding="utf-8") as file:
             levels = json.load(file)
-
         need_xp = levels[str(player.lvl)]
-        step = max(1, need_xp // 10)
-        filled = max(0, min(10, player.exp // step))
-        xp_bar = "🟨" * filled + "⬛" * (10 - filled)
+        pers = (((player.exp / need_xp) * 100) - (((player.exp / need_xp) * 100)) % 10) /10
+        repres = [1 if x <=pers else 0 for x in range(1,11)]
+        print(repres)
+        for i in range(len(repres)):
+            match i:
+                case 0:
+                    repres[i] = '<tg-emoji emoji-id="5424864752243354510">🟨</tg-emoji>' if repres[i]==1 else '<tg-emoji emoji-id="5424762574971383104">⬛</tg-emoji>' 
+                case 9:
+                    repres[i] = '<tg-emoji emoji-id="5424824959371355055">🟨</tg-emoji>' if repres[i]==1 else '<tg-emoji emoji-id="5425077709606791595">⬛</tg-emoji>'    
+                case _:
+                    repres[i] = '<tg-emoji emoji-id="5424658336115105531">🟨</tg-emoji>' if repres[i]==1 else '<tg-emoji emoji-id="5427227061565562800">⬛</tg-emoji>'    
+                    
+        xp_bar = ''.join(repres)
 
         rich_message = InputRichMessage(
             markdown=profile_text.format(
@@ -355,7 +374,6 @@ def profile_message(func: Callable) -> Callable:
             )
         )
 
-        data = await state.get_data()
         profile_message_id = data.get("inv_id")
 
         if profile_message_id is None:
@@ -371,11 +389,13 @@ def profile_message(func: Callable) -> Callable:
                     rich_message=rich_message,
                     chat_id=message.get_user_id(),
                     message_id=int(profile_message_id),
+                    reply_markup= profile_keyboard()
                 )
             except TelegramBadRequest as error:
                 if "message is not modified" not in error.message:
                     raise
 
+        await state.update_data(inv_state=str("profile"))
         return await func(message, state, *args, **kwargs)
 
     return wrapper
@@ -398,7 +418,7 @@ async def delete_messages(player_id):
     await _delete_messages(player_id, bot)
 
 
-async def profile(player_id):
-    return await get_player(player_id)
+async def profile(player_id,name):
+    return await get_player(player_id,name)
 
             

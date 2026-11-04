@@ -122,13 +122,16 @@ async def add_to_inventory(player_id: int, items: dict[str, int]) -> None:
                 record.count += count
         await session.commit()
 
-async def get_player(player_id: int):
+async def get_player(player_id: int,name: str | None = None) -> Any:
     from utils.player import player as Player
 
     async with Session() as session:
         record = await session.get(PlayerModel, player_id)
         if record is None:
-            return None
+            record = PlayerModel(id=player_id, name=name, lvl=1, exp=0, gold=0)
+            session.add(record)
+            await session.commit()
+            await session.refresh(record)
         result = Player()
         result.id = record.id
         result.name = record.name
@@ -242,24 +245,13 @@ async def add_to_trash(player_id: int, msg_id: int) -> None:
         await session.commit()
 
 
-async def get_inventory(player_id: int) -> list[tuple]:
-    if _inventory_table is None:
-        logger.warning("Cannot load inventory: table inventory does not exist")
-        return []
+async def get_inventory(player_id: int):
+    async with Session() as session:
+        return (await session.scalars(select(Inventory).where(Inventory.pl_id == player_id))).all()
 
-    player_column = next(
-        (column for column in _inventory_table.columns
-         if column.name.lower() == "pl_id"),
-        None,
-    )
-    if player_column is None:
-        raise RuntimeError("В таблице inventory не найден столбец PL_ID")
-
-    async with engine.connect() as connection:
-        result = await connection.execute(
-            select(_inventory_table).where(player_column == player_id)
-        )
-        return [tuple(row) for row in result.fetchall()]
+async def get_item(item_id: str):
+    async with Session() as session:
+        return await session.get(ItemBase, item_id)
 
 
 async def close_db() -> None:

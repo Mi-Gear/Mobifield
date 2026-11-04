@@ -7,6 +7,14 @@ class ExplorationLockMiddleware(BaseMiddleware):
         state = data.get("state")
 
         if state and await state.get_state() == 'exploring':
+            # Во время исследования разрешаем только открыть инвентарь
+            # или вернуться к карточке профиля. Само исследование продолжается.
+            if isinstance(event, CallbackQuery) and event.data in {
+                "open_inventory",
+                "back_profile",
+            }:
+                return await handler(event, data)
+
             if isinstance(event, CallbackQuery):
                 await event.answer(
                     "⏳ Ты сейчас исследуешь локацию!",

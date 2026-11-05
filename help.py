@@ -352,6 +352,10 @@ def profile_message(func: Callable) -> Callable:
             data["inv_state"] = "inventory"
         elif callback_data == "back_profile":
             data["inv_state"] = "profile"
+        elif callback_data and callback_data.startswith("item_"):
+            # Карточку предмета отрисует сам show_item.
+            # Декоратор не должен перезаписывать её экраном инвентаря.
+            data["inv_state"] = "item"
 
         view = data.get("inv_state", "profile")
         player_id = message.get_user_id()
@@ -399,7 +403,11 @@ def profile_message(func: Callable) -> Callable:
 
         from aiogram.exceptions import TelegramBadRequest
         try:
-            if view == "inventory":
+            # При item_* не трогаем сообщение: show_item ниже заменит его
+            # карточкой выбранного предмета.
+            if view == "item":
+                pass
+            elif view == "inventory":
                 await message.bot.edit_message_text(
                     chat_id=player_id,
                     message_id=int(profile_message_id),

@@ -4,7 +4,7 @@ from aiogram import Bot
 from utils.config import TOKEN
 from functools import wraps
 from typing import Callable, Optional,Dict, Any
-from aiogram.types import CallbackQuery, Message, User, Chat
+from aiogram.types import CallbackQuery, Message, User, Chat, InputMediaPhoto, InputRichMessageMedia
 from utils.player import player as pl
 import asyncio, random
 from utils.database import (
@@ -328,6 +328,7 @@ async def location_keyboard(location, lvl):
 def profile_keyboard():
     buttons = [[InlineKeyboardButton(text="Инвентарь",callback_data="open_inventory")]]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 async def inventory_keyboard(player_id):
     inventory = await get_inventory(player_id)
     buttons = []

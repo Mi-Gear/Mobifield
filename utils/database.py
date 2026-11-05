@@ -38,6 +38,7 @@ class ItemBase(Base):
     location: Mapped[str] = mapped_column(String)
     type: Mapped[str] = mapped_column(String)
     rarity: Mapped[str] = mapped_column(String)
+    image_pathname: Mapped[str] = mapped_column(String)
 
 
 class LocationRequirement(Base):

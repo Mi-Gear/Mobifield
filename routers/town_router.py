@@ -46,4 +46,27 @@ async def switch_profile_view(message: Pepe, state: FSMContext):
     # Переключение выполняется декоратором profile_message.
     return
 
-
+@twn.callback_query(F.data.startswith("item_"))
+@pepe_handler
+@profile_message
+async def show_item(message: Pepe, state: FSMContext):
+    item_id = message.data.split("item_")[1]
+    item = await get_item(item_id)
+    data = await state.get_data()
+    inv_id = data.get("inv_id")
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Back",callback_data="open_inventory")]])
+    rich_message = InputRichMessage(
+        markdown = "![](tg://photo?id=avatar)",
+        media=[InputRichMessageMedia(
+            id="avatar",
+            media=InputMediaPhoto(
+                media=FSInputFile(item.image_pathname+f"/{item.id}.png")
+            )
+        )]
+    )
+    await bot.edit_message_text(
+        chat_id=message.callback_from.id,
+        message_id = inv_id,
+        rich_message = rich_message,
+        reply_markup=kb)
+    

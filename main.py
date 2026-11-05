@@ -34,7 +34,13 @@ logger = logging.getLogger("mobifield")
 
 storage = SQLiteStorage()
 dp = Dispatcher(bot=bot, storage=storage)
-dp.update.outer_middleware(ExplorationLockMiddleware())
+
+# Middleware должен получать конкретные Message и CallbackQuery,
+# а не общий объект Update. Иначе исключения для кнопок инвентаря
+# во время exploring не могут корректно сработать.
+exploration_lock = ExplorationLockMiddleware()
+dp.message.outer_middleware(exploration_lock)
+dp.callback_query.outer_middleware(exploration_lock)
 
 dp.include_router(reg)
 reg.include_router(twn)

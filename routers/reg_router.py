@@ -15,7 +15,7 @@ reg_dialog = dialog["registration"]
 @pepe_handler
 async def on_enter(message: Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-    if await get_player(message.get_user_id()) is not None and message.get_user_id() != 658742998:
+    if (await get_player(message.get_user_id())).name is not None and message.get_user_id() != 658742998:
         await message.send_message(
             text="Повторная попытка регистрации в гильдии нарушает законы Мобифилда. Вам отказано!"
         )
@@ -41,26 +41,25 @@ async def reg_1(message: Pepe, state: FSMContext):
     )
     await state.set_state("reg_1")
     photo = FSInputFile("images/guildmaster.jpg")
-    kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(
-            text=message.user.first_name,
-            callback_data="123",
-        )
-    ]])
-    await message.send_photo(caption=reg_dialog[1], photo=photo, reply_markup=kb)
+    await message.send_photo(caption=reg_dialog[1], photo=photo)
 
 
 @prn
-@reg.callback_query(StateFilter("reg_1"))
+@reg.message(StateFilter("reg_1"))
 @pepe_handler
 async def stat_done(message: Pepe, state: FSMContext):
     await bot.delete_message(
-        chat_id=message.callback_from.id,
-        message_id=message.callback_message.message_id,
+        chat_id=message.get_user_id(),
+        message_id=message.message_id,
     )
+    await bot.delete_message(
+            chat_id=message.get_user_id(),
+            message_id=message.message_id-1,
+        )
     await state.set_state("back_town")
     photo = FSInputFile("images/guildmaster.jpg")
     kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="Спасибо!", callback_data="back_town")
+        InlineKeyboardButton(text=f"Спасибо!", callback_data="back_town")
     ]])
-    await message.send_photo(caption=reg_dialog[2], photo=photo, reply_markup=kb)
+    await add_username(message.get_user_id(),message.message.text)
+    await message.send_photo(caption=reg_dialog[2].format(name=message.message.text), photo=photo, reply_markup=kb)

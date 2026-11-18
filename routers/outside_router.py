@@ -12,6 +12,7 @@ out = Router()
 @out.callback_query(StateFilter("town"), F.data == "outside")
 @pepe_handler
 @profile_message
+@wrk
 async def crossroads(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     await state.set_state("crossroads")
@@ -21,6 +22,7 @@ async def crossroads(message:Pepe,state:FSMContext):
 @out.callback_query(F.data.startswith("enter_"))
 @pepe_handler
 @profile_message
+@wrk
 async def enter_(message:Pepe,state: FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     cbd = message.get_callback_data()
@@ -32,6 +34,7 @@ async def enter_(message:Pepe,state: FSMContext):
 @out.callback_query(F.data.startswith("back_"))
 @pepe_handler
 @profile_message
+@wrk
 async def back_(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     call = message.callback_data.split("back_")
@@ -49,6 +52,7 @@ async def back_(message:Pepe,state:FSMContext):
 @out.callback_query(F.data.startswith("run_"))
 @pepe_handler
 @profile_message
+@wrk
 async def run_(message:Pepe,state:FSMContext):
     await bot.delete_message(chat_id=message.callback_from.id, message_id=message.callback_message.message_id)
     state_ = await state.get_state()
@@ -56,49 +60,8 @@ async def run_(message:Pepe,state:FSMContext):
     type = message.callback_query.data.split("run_")[1]
     loot = await get_run_loot(location, type)
 
-    common, rare, epic, legendary = [], [], [], []
-
-    for item in loot:
-        match item.rarity:
-            case "common":
-                common.append(item)
-            case "rare":
-                rare.append(item)
-            case "epic":
-                epic.append(item)
-            case "legendary":
-                legendary.append(item)
-
-    rarity_items = {
-        "common": common,
-        "rare": rare,
-        "epic": epic,
-        "legendary": legendary,
-    }
-
-    # Базовые веса редкостей: 60%, 25%, 12%, 3%.
-    # random.choices нормализует веса доступных редкостей,
-    # поэтому отсутствующие редкости перераспределяются автоматически.
-    rarity_weights = {
-        "common": 6000,
-        "rare": 2500,
-        "epic": 1200,
-        "legendary": 300,
-    }
-
-    # Оставляем только редкости, в которых есть предметы
-    available_rarities = [
-        rarity
-        for rarity, items in rarity_items.items()
-        if items
-    ]
-
-    if not available_rarities:
-        await message.send_message(
-            text="Здесь пока нечего найти. Попробуйте исследовать другое место."
-        )
-        return
-
+    items = [i.id for i in loot]
+    weights = [i.weights for i in loot]
     seconds = 300
     match type:
         case "fishing":
@@ -112,7 +75,7 @@ async def run_(message:Pepe,state:FSMContext):
         case "searching":
             prt = "Вы ищете что-то интересное...\n\n"
     await state.set_state("exploring")
-    msg = await message.send_message(text=prt)
+    msg = await message.send_message(text=prt + make_bar("xp", 0,10)+" 0%",parse_mode="html")
 
     arr = {}
 
@@ -120,29 +83,14 @@ async def run_(message:Pepe,state:FSMContext):
         for _ in range(math.floor(seconds / 30)):
             await asyncio.sleep(math.floor(seconds / 10))
 
-            selected_rarity = random.choices(
-                available_rarities,
-                weights=[rarity_weights[rarity] for rarity in available_rarities],
-                k=1,
-            )[0]
+            item_base = await get_item(random.choices(items,weights)) 
+            arr[item_base] = arr.get(item_base, 0) + 1
 
-            match selected_rarity:
-                case "common":
-                    result = random.choice(common)
-                case "rare":
-                    result = random.choice(rare)
-                case "epic":
-                    result = random.choice(epic)
-                case "legendary":
-                    result = random.choice(legendary)
-
-            arr[result] = arr.get(result, 0) + 1
-
-            res_text = prt
+            res_text = prt + make_bar("xp", _+1,seconds/30)+f"{(_+1)*10}%\n\n"
             for item, count in arr.items():
                 res_text += f"+{count} {item.name}\n"
 
-            await msg.edit_text(res_text)
+            await msg.edit_text(res_text,parse_mode="html")
 
     finally:
         res = {

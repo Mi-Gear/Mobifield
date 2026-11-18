@@ -7,17 +7,16 @@ from typing import Callable, Optional,Dict, Any
 from aiogram.types import CallbackQuery, Message, User, Chat, InputMediaPhoto, InputRichMessageMedia
 from utils.player import player as pl
 import asyncio, random
-from utils.database import (
-    get_player, add_player, get_inventory,
-    delete_messages as _delete_messages,
-    add_to_trash, get_loc_requir,get_run_loot, add_to_inventory, get_item
-)
+from utils.database import *
+from utils.database import delete_messages as _delete_messages
 from typing import Union, Optional
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage, DisabledButton
+from aiogram.fsm.context import FSMContext
 bot = Bot(token = TOKEN())
 
 town_kb = InlineKeyboardMarkup(inline_keyboard=
         [
+            [InlineKeyboardButton(text="Гильдия",callback_data='guild')],
             [InlineKeyboardButton(text="За город",callback_data="outside")],
         ]
     )
@@ -292,6 +291,22 @@ def pepe_handler(func: Callable) -> Callable:
 
     return wrapper
 
+async def taskboard_kb(lvl):
+    buttons = []
+    tasks = await get_tasks(lvl)
+    tab=[]
+    counter = 0
+    for i in range(0,len(tasks)):
+        tab.append(InlineKeyboardButton(text=tasks[i].name,callback_data="task_"+tasks[i].id))
+        if (counter==2):
+            buttons.append(tab)
+            tab=[]
+            counter = 0
+        counter+=1
+    buttons.append(tab)
+    buttons.append([InlineKeyboardButton(text="Вернуться", callback_data="guild")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 
 def outside_keyboard(lvl):
     buttons = []
@@ -309,7 +324,6 @@ def outside_keyboard(lvl):
 
 async def location_keyboard(location, lvl):
     loc = await get_loc_requir(location)
-    print(loc)
     buttons = []
     if lvl >= loc['fishing'] and loc['fishing']!=-1:
         buttons.append([InlineKeyboardButton(text="🎣 Рыбалка",callback_data="run_fishing")])
@@ -333,52 +347,116 @@ async def inventory_keyboard(player_id):
     inventory = await get_inventory(player_id)
     buttons = []
     for item in inventory:
-        item_base = await get_item(item.id)
-        buttons.append([InlineKeyboardButton(text=f"{item_base.name} x{item.count}",callback_data=f"item_{item.id}")])
+        buttons.append([InlineKeyboardButton(text=f"{item.base.name} x{item.count}",callback_data=f"item_{item.id}",icon_custom_emoji_id=item.base.emoji_id)])
     buttons.append([InlineKeyboardButton(text="Назад",callback_data="back_profile")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+async def task_kb(task_id, player_id):
+    buttons = []
+    tasks = await get_tasks((await get_player(player_id)).lvl)
+    try:
+        for i in tasks:
+                if i.id == task_id:
+                    task = i
+        req = json.loads(task.requirements)
+        for i in req:
+            item = await get_item_from_inventory(player_id,i)
+            if item is None or item.count < req[i]:
+                raise ValueError
+    except ValueError as e:
+        buttons.append([InlineKeyboardButton(text="Не выполнены условия",callback_data="123",style="danger")])
+    if len(buttons) == 0:
+        buttons.append([InlineKeyboardButton(text="Выполнить",callback_data=f"reward_{task_id}", style="danger")])
+    buttons.append([InlineKeyboardButton(text="Назад",callback_data="taskboard")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    
+
+def make_bar(type: str, current,purpose):
+    progress = max(0, min(100, current/ purpose * 100))
+    filled = int(progress // 10)
+
+    repres = [1 if x <= filled else 0 for x in range(1, 11)]
+    typo = {
+        "xp":{
+            "left_filled":5424864752243354510,
+            "left_empty":5424762574971383104,
+            "middle_filled":5424824959371355055,
+            "middle_empty":5425077709606791595,
+            "right_filled":5424658336115105531,
+            "right_empty":5427227061565562800
+            }
+        }
+    emoji_set = typo[type]
+    for i in range(len(repres)):
+        match i:
+            case 0:
+                repres[i] = (
+                    f'<tg-emoji emoji-id="{emoji_set["left_filled"]}">🟨</tg-emoji>'
+                    if repres[i] else
+                    f'<tg-emoji emoji-id="{emoji_set["left_empty"]}">⬛</tg-emoji>'
+                )
+            case 9:
+                repres[i] = (
+                    f'<tg-emoji emoji-id="{emoji_set["middle_filled"]}">🟨</tg-emoji>'
+                    if repres[i] else
+                    f'<tg-emoji emoji-id="{emoji_set["middle_empty"]}">⬛</tg-emoji>'
+                )
+            case _:
+                repres[i] = (
+                    f'<tg-emoji emoji-id="{emoji_set["right_filled"]}">🟨</tg-emoji>'
+                    if repres[i] else
+                    f'<tg-emoji emoji-id="{emoji_set["right_empty"]}">⬛</tg-emoji>'
+                )
+    return "".join(repres)
+
+                
+def wrk(func:Callable) -> Callable:
+    @wraps(func)
+    async def wrapper(message: Pepe, state: FSMContext, *args, **kwargs):
+        data = await state.get_data()
+        data["_"] = message.message_id
+        await state.set_data(data)
+        result = await func(message, state, *args, **kwargs)
+        return result
+    return wrapper
+    
 def profile_message(func: Callable) -> Callable:
     """Создаёт карточку профиля и переключает её содержимое на инвентарь."""
 
     @wraps(func)
-    async def wrapper(message: Pepe, state, *args, **kwargs):
+    async def wrapper(message: Pepe, state: FSMContext, *args, **kwargs):
+
+        # Сначала выполняем основной обработчик
+
         callback_data = message.get_raw_callback_data()
+        if message.is_message and message.message.text == "/respawn":
+            await bot.delete_message(message.get_user_id(),message.message_id)
         data = await state.get_data()
 
-        # Переключение представления хранится отдельно от FSM-состояния игры:
-        # поэтому открытие инвентаря не прерывает исследование/поиск.
+        # Определяем отображаемый экран
         if callback_data == "open_inventory":
             data["inv_state"] = "inventory"
         elif callback_data == "back_profile":
             data["inv_state"] = "profile"
         elif callback_data and callback_data.startswith("item_"):
-            # Карточку предмета отрисует сам show_item.
-            # Декоратор не должен перезаписывать её экраном инвентаря.
             data["inv_state"] = "item"
 
         view = data.get("inv_state", "profile")
+
         player_id = message.get_user_id()
+        await add_level(str(player_id))
+
         player = await profile(player_id, message.user.first_name)
 
         with open("profile_text.txt", "r", encoding="utf-8") as file:
             profile_text = file.read()
+
         with open("level.json", "r", encoding="utf-8") as file:
             levels = json.load(file)
 
-        need_xp = levels[str(player.lvl)]
-        progress = max(0, min(100, player.exp / need_xp * 100))
-        filled = int(progress // 10)
-        repres = [1 if x <= filled else 0 for x in range(1, 11)]
 
-        for i in range(len(repres)):
-            match i:
-                case 0:
-                    repres[i] = '<tg-emoji emoji-id="5424864752243354510">🟨</tg-emoji>' if repres[i] else '<tg-emoji emoji-id="5424762574971383104">⬛</tg-emoji>'
-                case 9:
-                    repres[i] = '<tg-emoji emoji-id="5424824959371355055">🟨</tg-emoji>' if repres[i] else '<tg-emoji emoji-id="5425077709606791595">⬛</tg-emoji>'
-                case _:
-                    repres[i] = '<tg-emoji emoji-id="5424658336115105531">🟨</tg-emoji>' if repres[i] else '<tg-emoji emoji-id="5427227061565562800">⬛</tg-emoji>'
+        bar = make_bar("xp",player.exp,levels[str(player.lvl)])
+
 
         rich_message = InputRichMessage(
             markdown=profile_text.format(
@@ -386,12 +464,25 @@ def profile_message(func: Callable) -> Callable:
                 exp=player.exp,
                 lvl=player.lvl,
                 gold=player.gold,
-                need_xp=need_xp,
-                bar="".join(repres),
+                need_xp=levels[str(player.lvl)],
+                bar=bar,
             )
         )
 
+        from aiogram.exceptions import TelegramBadRequest
+
         profile_message_id = data.get("inv_id")
+
+        try:
+            if message.message.text == "/respawn":
+                data.pop("inv_id")
+                data.pop("inv_state")
+                await state.set_data(data)
+                await bot.delete_message(message.get_user_id(),profile_message_id)
+                profile_message_id = None
+        except:
+            pass
+
         if profile_message_id is None:
             sent = await message.bot.send_rich_message(
                 chat_id=player_id,
@@ -401,12 +492,12 @@ def profile_message(func: Callable) -> Callable:
             profile_message_id = str(sent.message_id)
             await state.update_data(inv_id=profile_message_id)
 
-        from aiogram.exceptions import TelegramBadRequest
+
         try:
-            # При item_* не трогаем сообщение: show_item ниже заменит его
-            # карточкой выбранного предмета.
             if view == "item":
+                # Карточку предмета уже обработал основной обработчик
                 pass
+
             elif view == "inventory":
                 await message.bot.edit_message_text(
                     chat_id=player_id,
@@ -414,6 +505,7 @@ def profile_message(func: Callable) -> Callable:
                     text="Ваш инвентарь:",
                     reply_markup=await inventory_keyboard(player_id),
                 )
+
             else:
                 await message.bot.edit_message_text(
                     chat_id=player_id,
@@ -421,12 +513,15 @@ def profile_message(func: Callable) -> Callable:
                     rich_message=rich_message,
                     reply_markup=profile_keyboard(),
                 )
+
         except TelegramBadRequest as error:
             if "message is not modified" not in error.message:
                 raise
 
         await state.update_data(inv_state=view)
-        return await func(message, state, *args, **kwargs)
+        result = await func(message, state, *args, **kwargs)
+
+        return result
 
     return wrapper
 

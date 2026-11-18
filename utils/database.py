@@ -1,10 +1,11 @@
 import logging
+import json
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Integer, String, Table, MetaData, select, inspect
+from sqlalchemy import Integer, String, Table, MetaData, select, inspect,ForeignKey
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column,relationship,selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,26 @@ class ItemBase(Base):
     location: Mapped[str] = mapped_column(String)
     type: Mapped[str] = mapped_column(String)
     rarity: Mapped[str] = mapped_column(String)
+    weights: Mapped[int] = mapped_column(Integer)
     image_pathname: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    emoji_id: Mapped[str] = mapped_column(String)
 
+    @property
+    def display_name(self) -> str:
+        if self.emoji_id is None:
+            return self.name
+
+        return f'<tg-emoji emoji-id="{self.emoji_id}">🟨</tg-emoji> {self.name}'
+    
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    pl_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[str] = mapped_column(ForeignKey("item_base.id"),primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    base: Mapped["ItemBase"] = relationship(lazy="selectin")
 
 class LocationRequirement(Base):
     __tablename__ = "location_req"
@@ -63,12 +82,7 @@ class PlayerStatsModel(Base):
     luck: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     points: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
 
-class Inventory(Base):
-    __tablename__ = "inventory"
 
-    pl_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id: Mapped[str] = mapped_column(String, primary_key=True)
-    count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 class FSMModel(Base):
     __tablename__ = "fsm_states"
@@ -84,6 +98,17 @@ class TrashModel(Base):
 
     id: Mapped[int] = mapped_column("ID", Integer, primary_key=True)
     msg_id: Mapped[int] = mapped_column("msg_id", Integer, primary_key=True)
+
+class Tasks(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[str] = mapped_column(String,primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    requirements: Mapped[str] = mapped_column(String)
+    level: Mapped[int] = mapped_column(Integer)
+    exp_reward: Mapped[int] = mapped_column(Integer)
+    gold_reward: Mapped[int] = mapped_column(Integer)
 
 
 _inventory_metadata = MetaData()
@@ -112,6 +137,12 @@ async def init_db() -> None:
     else:
         logger.warning("Таблица inventory пока отсутствует; операции с инвентарём недоступны")
     logger.info("SQLAlchemy database initialized")
+
+async def add_username(user_id,name):
+    async with Session() as session:
+        player = await session.get(PlayerModel,(user_id))
+        player.name = name
+        await session.commit()
 
 async def add_to_inventory(player_id: int, items: dict[str, int]) -> None:
     async with Session() as session:
@@ -152,7 +183,32 @@ async def get_loc_requir(location: str):
         result['mining'] = record.mining
         return result
 
+async def get_tasks(lvl:int):
+    async with Session() as session:
+        record = await session.execute(select(Tasks).where(Tasks.level < lvl+1))
+        return record.scalars().all()
 
+async def get_item_from_inventory(user_id,item_id):
+    async with Session() as session:
+        record = await session.execute(select(Inventory).where(Inventory.pl_id == user_id,Inventory.id == item_id))
+        record = record.scalars().one_or_none()
+        return record
+
+async def add_level(user_id):
+    async with Session() as session:
+        player = await session.get(PlayerModel,(user_id))
+        with open("level.json","r") as f:
+            levels = json.load(f)
+        if player.exp >= levels[str(player.lvl)]:
+            player.exp -= levels[str(player.lvl)]
+            player.lvl +=1
+        await session.commit()
+
+async def add_gold(user_id,gold_count):
+    async with Session() as session:
+        player = await session.get(PlayerModel, (user_id))
+        player.gold +=gold_count
+        await session.commit()
 
 async def add_player(player: Any) -> None:
     async with Session() as session:
@@ -249,6 +305,18 @@ async def add_to_trash(player_id: int, msg_id: int) -> None:
 async def get_inventory(player_id: int):
     async with Session() as session:
         return (await session.scalars(select(Inventory).where(Inventory.pl_id == player_id))).all()
+
+async def change_inventory(user_id,item_id,count):
+    async with Session() as session:
+        record = await session.get(Inventory, (user_id,item_id))
+        record.count += count
+        await session.commit()
+
+async def change_xp(user_id,count):
+    async with Session() as session:
+        record = await session.get(PlayerModel, (user_id))
+        record.exp += count
+        await session.commit()
 
 async def get_item(item_id: str):
     async with Session() as session:

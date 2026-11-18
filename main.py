@@ -11,6 +11,7 @@ from help import bot
 from routers.reg_router import reg
 from routers.town_router import twn
 from routers.outside_router import out
+from routers.guild_router import guild
 
 
 # Логи пишутся в консоль и в logs/bot.log.
@@ -45,6 +46,7 @@ dp.callback_query.outer_middleware(exploration_lock)
 dp.include_router(reg)
 reg.include_router(twn)
 twn.include_router(out)
+twn.include_router(guild)
 
 
 async def on_startup() -> None:

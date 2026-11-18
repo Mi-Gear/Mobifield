@@ -29,7 +29,7 @@ async def enter_(message:Pepe,state: FSMContext):
     await state.set_state(cbd)
     kb = await location_keyboard(cbd.split("enter_")[1],(await get_player(message.get_user_id())).lvl)
     await message.send_message(text = outside_dialog[cbd.split("enter_")[1]], reply_markup=kb)
-    
+
 @prn
 @out.callback_query(F.data.startswith("back_"))
 @pepe_handler
@@ -65,15 +65,15 @@ async def run_(message:Pepe,state:FSMContext):
     seconds = 300
     match type:
         case "fishing":
-            prt = "Вы рыбачите...\n\n"
+            prt = "Ты устраиваешься у воды. Рыба пока не проявляет интереса к твоей персоне. Взаимность — редкое явление.\n\n"
         case "hunting":
-            prt = "Вы охотитесь...\n\n"
+            prt = "Ты идёшь по следу. Лес молчит, и это молчание постепенно начинает казаться осмысленным.\n\n"
         case "choping":
-            prt = "Вы рубите деревья...\n\n"
+            prt = "Ты принимаешься за деревья. Они не возражают, но и сотрудничеством это назвать трудно.\n\n"
         case "mining":
-            prt = "Вы добываете руду...\n\n"
+            prt = "Ты разбираешь породу. Камень хранит молчание лучше большинства людей.\n\n"
         case "searching":
-            prt = "Вы ищете что-то интересное...\n\n"
+            prt = "Ты осматриваешь окрестности. Обычно ценное лежит там, где его никто не ищет, — или там, где уже кто-то умер.\n\n"
     await state.set_state("exploring")
     msg = await message.send_message(text=prt + make_bar("xp", 0,10)+" 0%",parse_mode="html")
 
@@ -83,7 +83,7 @@ async def run_(message:Pepe,state:FSMContext):
         for _ in range(math.floor(seconds / 30)):
             await asyncio.sleep(math.floor(seconds / 10))
 
-            item_base = await get_item(random.choices(items,weights)) 
+            item_base = await get_item(random.choices(items,weights))
             arr[item_base] = arr.get(item_base, 0) + 1
 
             res_text = prt + make_bar("xp", _+1,seconds/30)+f"{(_+1)*10}%\n\n"
@@ -114,4 +114,3 @@ async def run_(message:Pepe,state:FSMContext):
                 ]
             )
         )
-

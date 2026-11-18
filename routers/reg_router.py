@@ -17,7 +17,7 @@ async def on_enter(message: Pepe, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     if (await get_player(message.get_user_id())).name is not None and message.get_user_id() != 658742998:
         await message.send_message(
-            text="Повторная попытка регистрации в гильдии нарушает законы Мобифилда. Вам отказано!"
+            text="— Повторная регистрация? Боюсь, устав этого не предусматривает. Вы уже числитесь среди наших приключенцев.\n\nСекретарь посмотрел в книгу, затем на тебя.\n\n— Впрочем, если вы пришли за новой жизнью, боюсь, это не к нам. Мы выдаём только задания."
         )
     else:
         await state.set_state("reg_0")

@@ -10,16 +10,12 @@ twn = Router()
 
 async def show_town(message: Pepe, state: FSMContext):
     await state.set_state("town")
-
-    
-
     photo = FSInputFile("images/town.png")
     await message.send_photo(
         caption=dialog["town"][0],
         photo=photo,
         reply_markup=town_kb,
     )
-
 
 
 @prn
@@ -42,15 +38,16 @@ async def enter(message: Pepe, state: FSMContext):
 @profile_message
 @wrk
 async def respawn(message: Pepe, state: FSMContext):
-
     data = await state.get_data()
     if not data.get("_") is None:
-            try:
-                await bot.delete_message(message.get_user_id(),data.get("_"))
-            except: pass
-            data.pop("_")
-            await state.set_data(data)
+        try:
+            await bot.delete_message(message.get_user_id(),data.get("_"))
+        except:
+            pass
+        data.pop("_")
+        await state.set_data(data)
     await show_town(message, state)
+
 
 @prn
 @twn.callback_query(F.data.in_({"open_inventory", "back_profile"}))
@@ -58,8 +55,8 @@ async def respawn(message: Pepe, state: FSMContext):
 @profile_message
 @wrk
 async def switch_profile_view(message: Pepe, state: FSMContext):
-    # Переключение выполняется декоратором profile_message.
     return
+
 
 @twn.callback_query(F.data.startswith("item_"))
 @pepe_handler
@@ -74,9 +71,10 @@ async def show_item(message: Pepe, state: FSMContext):
         image_path = item.image_pathname+f"/{item.id}.png"
     except:
         image_path = "./images/placeholder.png"
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Back",callback_data="open_inventory")]])
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Назад",callback_data="open_inventory")]])
+    description = "Описание этого предмета пока не внесено. В гильдии обещали заполнить карточку, как только найдут человека, который умеет писать и согласен работать за еду."
     rich_message = InputRichMessage(
-        markdown = "![](tg://photo?id=img)" + ("Бот находится в состоянии ранней Альфа-версии. Описание отсутвует" if item.description is None else item.description),
+        markdown = "![](tg://photo?id=img)" + (description if item.description is None else item.description),
         media=[InputRichMessageMedia(
             id="img",
             media=InputMediaPhoto(
@@ -89,4 +87,3 @@ async def show_item(message: Pepe, state: FSMContext):
         message_id = inv_id,
         rich_message = rich_message,
         reply_markup=kb)
-    

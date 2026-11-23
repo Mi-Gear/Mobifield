@@ -79,15 +79,22 @@ async def inventory_data(request: web.Request):
             item = record.base
             if item is None:
                 continue
-            image_path = Path(item.image_pathname + f"/{item.id}.png")
+            try:
+                image_path = Path(item.image_pathname + f"/{item.id}.png")
+            except (TypeError, ValueError):
+                image_path = Path("./images/placeholder.png")
+
             if not image_path.is_file():
                 image_path = Path("./images/placeholder.png")
 
             image_data = ""
-            if image_path.is_file():
-                image_data = "data:image/png;base64," + base64.b64encode(
-                    image_path.read_bytes()
-                ).decode("ascii")
+            try:
+                if image_path.is_file():
+                    image_data = "data:image/png;base64," + base64.b64encode(
+                        image_path.read_bytes()
+                    ).decode("ascii")
+            except OSError:
+                image_data = ""
 
             items.append({
                 "id": item.id,

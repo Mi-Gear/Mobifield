@@ -15,6 +15,7 @@ from utils.database import Inventory, ItemBase, PlayerModel, Session
 
 WEB_HOST = "127.0.0.1"
 WEB_PORT = 8765
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def validate_init_data(init_data: str, bot_token: str) -> dict:
@@ -70,11 +71,12 @@ async def inventory_data(request: web.Request):
             if item is None:
                 return web.json_response({"error": "Предмет не найден"}, status=404)
             try:
-                image_path = Path(item.image_pathname + f"/{item.id}.png")
+                image_path = PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
             except (TypeError, ValueError):
-                image_path = Path("./images/placeholder.png")
+                image_path = PROJECT_ROOT / "images" / "placeholder.png"
+
             if not image_path.is_file():
-                image_path = Path("./images/placeholder.png")
+                image_path = PROJECT_ROOT / "images" / "placeholder.png"
             try:
                 image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
             except OSError:

@@ -57,7 +57,7 @@ async def on_startup() -> None:
     global web_runner
     await init_db()
     web_runner = await start_inventory_web(bot.token)
-    logger.info("Mini App и API доступны по HTTPS на порту 68")
+    logger.info("Веб-инвентарь запущен на 127.0.0.1:8765")
     logger.info("Бот запускается")
 
 

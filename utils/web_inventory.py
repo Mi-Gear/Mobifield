@@ -75,11 +75,27 @@ async def inventory_data(request: web.Request):
             except (TypeError, ValueError):
                 image_path = PROJECT_ROOT / "images" / "placeholder.png"
 
+            image_path = image_path.resolve()
+            print(
+                f"[Mobifield inventory] item={item.id} "
+                f"image_path={image_path} exists={image_path.is_file()}",
+                flush=True,
+            )
+
             if not image_path.is_file():
-                image_path = PROJECT_ROOT / "images" / "placeholder.png"
+                image_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
+                print(
+                    f"[Mobifield inventory] fallback_path={image_path} "
+                    f"exists={image_path.is_file()}",
+                    flush=True,
+                )
             try:
                 image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
-            except OSError:
+            except OSError as error:
+                print(
+                    f"[Mobifield inventory] image_read_error={error}",
+                    flush=True,
+                )
                 return web.json_response({"image": None})
             return web.json_response({"image": "data:image/png;base64," + image_data})
 

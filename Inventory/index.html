@@ -241,6 +241,22 @@
           render();
           renderDetail(state.items[0]);
         }
+
+        // Images load after the inventory is already visible.
+        await Promise.allSettled(state.items.map(async item => {
+          const imageResponse = await fetch("/inventory/data?image=" + encodeURIComponent(item.id), {
+            headers: {
+              "Accept": "application/json",
+              "X-Telegram-Init-Data": initData
+            }
+          });
+          if (!imageResponse.ok) return;
+          const imageData = await imageResponse.json();
+          if (imageData.image) item.image = imageData.image;
+        }));
+        render();
+        const selectedItem = state.items.find(item => item.id === state.selected);
+        if (selectedItem) renderDetail(selectedItem);
       } catch (error) {
         $("items").replaceChildren();
         const empty = document.createElement("div");

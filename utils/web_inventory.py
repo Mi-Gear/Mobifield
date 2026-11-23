@@ -68,27 +68,32 @@ async def inventory_data(request: web.Request):
     if image_id:
         async with Session() as session:
             item = await session.get(ItemBase, image_id)
-            if item is None:
-                return web.json_response({"error": "Предмет не найден"}, status=404)
-            try:
-                image_path = PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
-            except (TypeError, ValueError):
-                image_path = PROJECT_ROOT / "images" / "placeholder.png"
+            placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
 
-            image_path = image_path.resolve()
-            print(
-                f"[Mobifield inventory] item={item.id} "
-                f"image_path={image_path} exists={image_path.is_file()}",
-                flush=True,
-            )
+            # У предмета может не быть image_pathname или отдельного файла.
+            image_path = None
+            if item is not None and item.image_pathname:
+                candidate = (
+                    PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
+                ).resolve()
+                if candidate.is_file():
+                    image_path = candidate
 
-            if not image_path.is_file():
-                image_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
+            if image_path is None:
+                image_path = placeholder_path
                 print(
-                    f"[Mobifield inventory] fallback_path={image_path} "
+                    f"[Mobifield inventory] item={image_id} "
+                    f"using_placeholder={image_path} "
                     f"exists={image_path.is_file()}",
                     flush=True,
                 )
+            else:
+                print(
+                    f"[Mobifield inventory] item={image_id} "
+                    f"image_path={image_path} exists=True",
+                    flush=True,
+                )
+
             try:
                 image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
             except OSError as error:
@@ -96,7 +101,8 @@ async def inventory_data(request: web.Request):
                     f"[Mobifield inventory] image_read_error={error}",
                     flush=True,
                 )
-                return web.json_response({"image": None})
+                return web.json_response({"image": None}, status=500)
+
             return web.json_response({"image": "data:image/png;base64," + image_data})
 
     async with Session() as session:

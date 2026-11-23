@@ -44,7 +44,9 @@
     .item.selected { outline:2px solid var(--gold); outline-offset:1px; background:linear-gradient(145deg,#4a4537,#293039); }
     .item.common { border-color:#78858a; } .item.rare { border-color:var(--rare); }
     .item.epic { border-color:var(--epic); } .item.legendary { border-color:var(--legendary); }
-    .item-icon { display:block; font-size:34px; line-height:1.5; margin-bottom:3px; }
+    .item-icon { display:grid; place-items:center; height:58px; font-size:34px; line-height:1.5; margin-bottom:3px; }
+    .item-icon img { max-width:100%; max-height:58px; object-fit:contain; }
+    .detail-image { max-width:100%; max-height:190px; object-fit:contain; }
     .item-name { display:block; font-size:12px; line-height:1.25; overflow-wrap:anywhere; }
     .quantity { position:absolute; right:7px; bottom:5px; color:#f1dfb7; font:11px Arial,sans-serif; }
     .detail { padding:22px; display:flex; flex-direction:column; min-height:440px; }
@@ -146,7 +148,15 @@
         button.setAttribute("aria-label", item.name + ", количество " + item.count);
         const icon = document.createElement("span");
         icon.className = "item-icon";
-        icon.textContent = item.icon || icons[item.type] || "✦";
+        if (item.image) {
+          const image = document.createElement("img");
+          image.src = item.image;
+          image.alt = "";
+          image.onerror = () => { icon.textContent = item.icon || icons[item.type] || "✦"; };
+          icon.append(image);
+        } else {
+          icon.textContent = item.icon || icons[item.type] || "✦";
+        }
         const name = document.createElement("span");
         name.className = "item-name";
         name.textContent = item.name;
@@ -170,7 +180,17 @@
         return el;
       };
       add("div","detail-head","Сведения о предмете");
-      add("div","art",item.icon || icons[item.type] || "✦");
+      const art = add("div","art","");
+      if (item.image) {
+        const image = document.createElement("img");
+        image.className = "detail-image";
+        image.src = item.image;
+        image.alt = item.name || "";
+        image.onerror = () => { art.textContent = item.icon || icons[item.type] || "✦"; };
+        art.append(image);
+      } else {
+        art.textContent = item.icon || icons[item.type] || "✦";
+      }
       add("div","rarity " + (item.rarity || "common"),rarityNames[item.rarity] || "Неизвестная редкость");
       add("h2","",item.name || "Без названия");
       add("p","description",item.description || "Об этом предмете пока ничего не известно.");

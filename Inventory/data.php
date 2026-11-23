@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Mobifield Mini App endpoint.
  * GET /inventory/data                    -> inventory JSON (Telegram initData required)
- * GET /inventory/data?image=item_id      -> PNG image (public game artwork)
+ * GET /inventory/data?image=item_id      -> WebP image when available, otherwise PNG
  */
 
 $projectRoot = realpath(dirname(__DIR__));
@@ -100,6 +100,19 @@ function validateTelegramInitData(string $initData, string $botToken): int
     return $user['id'];
 }
 
+function preferredImagePath(string $pngPath): string
+{
+    $webpPath = preg_replace('/\.png$/i', '.webp', $pngPath);
+    if (is_string($webpPath) && is_file($webpPath) && is_readable($webpPath)) {
+        $resolved = realpath($webpPath);
+        if ($resolved !== false) {
+            return $resolved;
+        }
+    }
+
+    return $pngPath;
+}
+
 function imagePath(PDO $db, string $projectRoot, string $imageId): string
 {
     $placeholder = $projectRoot . '/images/placeholder.png';
@@ -109,7 +122,7 @@ function imagePath(PDO $db, string $projectRoot, string $imageId): string
         if ($path === false || !is_file($path)) {
             throw new RuntimeException('Placeholder image not found');
         }
-        return $path;
+        return preferredImagePath($path);
     }
 
     if (!preg_match('/^[a-z0-9_-]{1,100}$/D', $imageId)) {
@@ -131,7 +144,7 @@ function imagePath(PDO $db, string $projectRoot, string $imageId): string
             && is_file($candidate)
             && is_readable($candidate)
         ) {
-            return $candidate;
+            return preferredImagePath($candidate);
         }
     }
 
@@ -140,7 +153,7 @@ function imagePath(PDO $db, string $projectRoot, string $imageId): string
         throw new RuntimeException('Item image and placeholder image are unavailable');
     }
 
-    return $fallback;
+    return preferredImagePath($fallback);
 }
 
 try {
@@ -149,10 +162,22 @@ try {
         $db = getDatabase($projectRoot);
         $path = imagePath($db, $projectRoot, (string) $_GET['image']);
 
-        header('Content-Type: image/png');
-        header('Content-Length: ' . (string) filesize($path));
-        header('Cache-Control: public, max-age=86400');
+        $isWebp = strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'webp';
+        $contentType = $isWebp ? 'image/webp' : 'image/png';
+        $fileSize = filesize($path);
+        $etag = '"' . dechex((int) filemtime($path)) . '-' . dechex((int) $fileSize) . '"';
+
+        header('Content-Type: ' . $contentType);
+        header('Content-Length: ' . (string) $fileSize);
+        header('Cache-Control: public, max-age=2592000');
+        header('ETag: ' . $etag);
         header('X-Content-Type-Options: nosniff');
+
+        if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+
         readfile($path);
         exit;
     }

@@ -138,11 +138,26 @@
       .stats { padding:0 10px 8px; }
       .stat { font-size:10px; padding:6px 0; }
     }
+    /* На телефонах сведения открываются боковой выдвижной панелью,
+       а не занимают место под сеткой предметов. */
+    @media (max-width:850px) {
+      .detail {
+        position:fixed; z-index:20; top:60px; right:10px; bottom:10px;
+        width:min(390px, min(88vw, 430px)); max-height:calc(100dvh - 70px);
+        display:flex; flex-direction:column; align-self:auto; overflow-y:auto;
+        overscroll-behavior:contain; box-shadow:0 10px 40px #101d2dcc,0 0 0 100vmax #101d2d55;
+      }
+      .detail-head { flex:0 0 auto; }
+      .art { flex:0 0 auto; min-height:150px; }
+      .rarity { flex:0 0 auto; }
+      h2 { flex:0 0 auto; }
+      .description { flex:0 0 auto; }
+      .stats { flex:0 0 auto; margin-top:auto; }
+    }
     @media (max-width:360px) {
       .items { grid-template-columns:repeat(3,minmax(0,1fr)); }
-      .detail { grid-template-columns:1fr; }
-      .art { grid-row:auto; min-height:145px; }
-      .detail-head,.stats { grid-column:auto; }
+      .detail { width:min(92vw,350px); top:56px; right:6px; bottom:6px; max-height:calc(100dvh - 62px); }
+      .art { min-height:135px; }
     }
     @media (hover:none) { .item:hover { filter:none; } .item:active { filter:brightness(1.08); } }
     .tab:focus-visible,.item:focus-visible,.sort:focus-visible,.search:focus-visible { outline:2px solid #fff0c6; outline-offset:2px; }

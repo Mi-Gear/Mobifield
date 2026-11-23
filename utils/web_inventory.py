@@ -95,6 +95,7 @@ async def inventory_data(request: web.Request):
     image_id = request.query.get("image")
     if image_id:
         placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
+        print(placeholder_path)
 
         # Mini App запрашивает заглушку один раз и переиспользует её для всех предметов.
         if image_id == "__placeholder__":

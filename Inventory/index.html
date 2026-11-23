@@ -172,6 +172,102 @@
     }
     @media (hover:none) { .item:hover { border-color:#e4e3d8; } .item:active { opacity:.88; } }
     .tab:focus-visible,.item:focus-visible,.sort:focus-visible,.search:focus-visible { outline:2px solid #fff0c6; outline-offset:2px; }
+
+    /* Более сдержанный dark fantasy: меньше декора, проще поверхности и контраст. */
+    :root {
+      --gold:#a88b5c; --gold2:#756044; --text:#dedbd2; --muted:#96958d;
+      --common:#777b78; --rare:#63818a; --epic:#796487; --legendary:#a48653;
+    }
+    html { background:#111310; }
+    body {
+      color:var(--text);
+      font-family:Arial,Helvetica,sans-serif;
+      background:linear-gradient(145deg,#111310,#191b17 58%,#121410);
+    }
+    .topbar {
+      background:#191b17; border-bottom:1px solid #514936;
+      box-shadow:none;
+    }
+    .brand-mark {
+      border-color:#65563d; border-radius:4px; color:#b49a6c;
+      background:#24251f; font-size:17px;
+    }
+    .eyebrow { color:#d0c3a7; letter-spacing:.02em; }
+    .wallet { color:#c6b58e; }
+    .tabs {
+      min-height:48px; gap:2px; padding:0 4px;
+      background:#191b17; border-bottom:1px solid #514936;
+    }
+    .tab {
+      max-width:none; color:#aaa99f; font-size:11px;
+      border-bottom:2px solid transparent;
+    }
+    .tab:before { color:#aaa18d; font-size:18px; }
+    .tab.active {
+      color:#e0d2b2; border-bottom-color:#a88b5c;
+      background:#ffffff06;
+    }
+    .tab.active:before { color:#c5aa78; text-shadow:none; }
+    .search,.sort {
+      color:#dedbd2; background:#20221d; border:1px solid #454638;
+      border-radius:3px;
+    }
+    .search::placeholder { color:#88877e; }
+    .countline { color:#aaa99f; text-shadow:none; }
+    .items { gap:7px; }
+    .item {
+      border:1px solid #42443a; border-radius:3px;
+      color:#d8d5ca; background:#252720; box-shadow:none;
+    }
+    .item:before { display:none; }
+    .item:hover { border-color:#81704d; }
+    .item.selected {
+      outline:1px solid #a88b5c; outline-offset:0;
+      border-color:#a88b5c; box-shadow:inset 0 0 0 1px #a88b5c44;
+    }
+    .item.common { background:#252720; }
+    .item.rare { background:#20282a; }
+    .item.epic { background:#29232d; }
+    .item.legendary { background:#30291f; }
+    .item-icon img { filter:drop-shadow(0 2px 2px #0009); }
+    .item-name { color:#d8d5ca; text-shadow:none; }
+    .quantity { color:#d5cbb5; text-shadow:0 1px 2px #000; }
+    .detail {
+      border:1px solid #514936; border-radius:3px;
+      background:#1b1d18; box-shadow:none;
+    }
+    .detail-head {
+      color:#ded2b8; background:#25251f;
+      border-bottom:1px solid #514936;
+      font:600 17px Arial,Helvetica,sans-serif; text-shadow:none;
+    }
+    .art {
+      background:#151712; border-bottom:1px solid #3e4035;
+    }
+    .detail-image { filter:drop-shadow(0 4px 5px #000b); }
+    .rarity { color:#96958d; }
+    .rarity.common { color:#96958d; }
+    .rarity.rare { color:#7eabb4; }
+    .rarity.epic { color:#aa8cbd; }
+    .rarity.legendary { color:#c3a16a; }
+    h2 { color:#e0d8c7; font-family:Georgia,serif; }
+    .description { color:#b3b0a6; }
+    .stat { border-top:1px solid #37392f; color:#99988e; }
+    .stat strong { color:#d5cbb5; }
+    .empty {
+      color:#aaa99f; text-shadow:none; border:1px dashed #494a3e;
+      background:#1b1d18;
+    }
+    .notice {
+      border-left:2px solid #8e764d; color:#bdb29a; background:#1b1d18;
+    }
+    @media (max-width:850px) {
+      .detail { box-shadow:-8px 0 24px #0008; }
+      .detail-close { border:1px solid #5b594c; border-radius:3px; background:#303128; color:#ddd5c3; }
+    }
+    .tab:focus-visible,.item:focus-visible,.sort:focus-visible,.search:focus-visible {
+      outline:2px solid #b49a6c; outline-offset:2px;
+    }
   </style>
 </head>
 <body>

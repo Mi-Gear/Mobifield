@@ -242,7 +242,25 @@
           renderDetail(state.items[0]);
         }
 
-        // Images load after the inventory is already visible.
+        // Загружаем изображения предметов; общую заглушку скачиваем только один раз.
+        let placeholderPromise = null;
+        const getPlaceholder = () => {
+          if (!placeholderPromise) {
+            placeholderPromise = fetch("/inventory/data?image=__placeholder__", {
+              headers: {
+                "Accept": "application/json",
+                "X-Telegram-Init-Data": initData
+              }
+            }).then(async response => {
+              if (!response.ok) throw new Error("Не удалось загрузить заглушку изображения");
+              const data = await response.json();
+              if (!data.image) throw new Error("Сервер не вернул заглушку изображения");
+              return data.image;
+            });
+          }
+          return placeholderPromise;
+        };
+
         await Promise.allSettled(state.items.map(async item => {
           const imageResponse = await fetch("/inventory/data?image=" + encodeURIComponent(item.id), {
             headers: {
@@ -252,7 +270,11 @@
           });
           if (!imageResponse.ok) return;
           const imageData = await imageResponse.json();
-          if (imageData.image) item.image = imageData.image;
+          if (imageData.image) {
+            item.image = imageData.image;
+          } else if (imageData.placeholder) {
+            item.image = await getPlaceholder();
+          }
         }));
         render();
         const selectedItem = state.items.find(item => item.id === state.selected);

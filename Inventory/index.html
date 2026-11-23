@@ -195,8 +195,30 @@
 
     async function loadInventory() {
       try {
-        const response = await fetch("/api/inventory", { credentials: "same-origin", headers: { "Accept": "application/json" } });
-        if (!response.ok) throw new Error("API вернул HTTP " + response.status);
+        const params = new URLSearchParams(location.hash.slice(1));
+        const loginToken = params.get("token");
+        if (loginToken) {
+          history.replaceState(null, "", location.pathname + location.search);
+          const loginResponse = await fetch("/inventory/login", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({ token: loginToken })
+          });
+          if (!loginResponse.ok) {
+            const loginError = await loginResponse.json();
+            throw new Error(loginError.error || "Не удалось войти");
+          }
+        }
+
+        const response = await fetch("/inventory/data", {
+          credentials: "same-origin",
+          headers: { "Accept": "application/json" }
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || "Сервер вернул HTTP " + response.status);
+        }
         const data = await response.json();
         state.items = Array.isArray(data) ? data : (data.items || []);
         if (data.gold != null) $("gold").textContent = data.gold;
@@ -204,11 +226,18 @@
         render();
         if (state.items.length) {
           state.selected = state.items[0].id;
-          render(); renderDetail(state.items[0]);
+          render();
+          renderDetail(state.items[0]);
         }
       } catch (error) {
-        $("items").innerHTML = '<div class="empty">Не удалось загрузить инвентарь.<br>Ожидается подключение API <code>/api/inventory</code>.</div>';
-        $("notice").textContent = "Веб-интерфейс уже свёрстан, но серверный API ещё не подключён. Сам HTML не должен получать доступ к SQLite напрямую.";
+        $("items").replaceChildren();
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = error.message.includes("вход") || error.message.includes("Telegram")
+          ? "Откройте бота Mobifield и отправьте команду /web_inventory. Бот пришлёт персональную ссылку для входа."
+          : "Не удалось загрузить инвентарь: " + error.message;
+        $("items").append(empty);
+        $("notice").textContent = "Вход выполняется через одноразовую ссылку из Telegram-бота. Ссылка действует 10 минут.";
         console.info("Mobifield inventory:", error.message);
       }
     }

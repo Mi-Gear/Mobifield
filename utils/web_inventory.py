@@ -1,4 +1,6 @@
-import secrets
+import hashlib
+hmac
+import json
 import time
 
 from aiohttp import web
@@ -8,61 +10,46 @@ from sqlalchemy.orm import selectinload
 from utils.database import Inventory, PlayerModel, Session
 
 
-WEB_URL = "https://mobifield.duckdns.org:68"
-TOKEN_TTL = 600
-SESSION_TTL = 43200
-
-_login_tokens: dict[str, tuple[int, float]] = {}
-_sessions: dict[str, tuple[int, float]] = {}
-
-
-def create_login_token(player_id: int) -> str:
-    token = secrets.token_urlsafe(32)
-    _login_tokens[token] = (player_id, time.time() + TOKEN_TTL)
-    return token
-
-
-async def login(request: web.Request) -> web.Response:
-    try:
-        payload = await request.json()
-    except (ValueError, TypeError):
-        return web.json_response({"error": "Некорректный запрос"}, status=400)
-
-    token = payload.get("token") if isinstance(payload, dict) else None
-    if not isinstance(token, str):
-        return web.json_response({"error": "Не передан ключ входа"}, status=400)
-
-    entry = _login_tokens.pop(token, None)
-    if entry is None or entry[1] < time.time():
-        return web.json_response({"error": "Ссылка устарела или уже использована"}, status=401)
-
-    player_id = entry[0]
-    async with Session() as session:
-        player = await session.get(PlayerModel, player_id)
-        if player is None:
-            return web.json_response({"error": "Персонаж не найден"}, status=404)
-
-    session_id = secrets.token_urlsafe(32)
-    _sessions[session_id] = (player_id, time.time() + SESSION_TTL)
-    response = web.json_response({"ok": True})
-    response.set_cookie("mf_session", session_id, max_age=SESSION_TTL, httponly=True, secure=True, samesite="Strict", path="/")
-    return response
+def validate_init_data(init_data: str, bot_token: str) -> dict:
+    if not init_data or len(init_data) > 8192:
+        raise ValueError("Некорректные Telegram initData")
+    from urllib.parse import parse_qsl
+    values = dict(parse_qsl(init_data, keep_blank_values=True, strict_parsing=True))
+    received_hash = values.pop("hash", None)
+    if not received_hash:
+        raise ValueError("В initData отсутствует hash")
+    data_check_string = "\n".join(f"{key}={value}" for key, value in sorted(values.items()))
+    secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
+    expected_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected_hash, received_hash):
+        raise ValueError("Подпись Telegram initData недействительна")
+    auth_date = int(values.get("auth_date", "0"))
+    if auth_date > time.time() + 30 or time.time() - auth_date > 86400:
+        raise ValueError("Telegram initData устарели")
+    user = json.loads(values.get("user", "{}"))
+    player_id = user.get("id")
+    if not isinstance(player_id, int):
+        raise ValueError("В initData отсутствует Telegram user ID")
+    return {"user_id": player_id}
 
 
 async def inventory_data(request: web.Request) -> web.Response:
-    session_id = request.cookies.get("mf_session")
-    entry = _sessions.get(session_id) if session_id else None
-    if entry is None or entry[1] < time.time():
-        if session_id:
-            _sessions.pop(session_id, None)
-        return web.json_response({"error": "Требуется вход через Telegram-бота"}, status=401)
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
+    try:
+        identity = validate_init_data(init_data, request.app["bot_token"])
+    except (ValueError, TypeError, json.JSONDecodeError) as error:
+        return web.json_response({"error": str(error)}, status=401)
 
-    player_id = entry[0]
+    player_id = identity["user_id"]
     async with Session() as session:
         player = await session.get(PlayerModel, player_id)
         if player is None:
             return web.json_response({"error": "Персонаж не найден"}, status=404)
-        result = await session.scalars(select(Inventory).where(Inventory.pl_id == player_id).options(selectinload(Inventory.base)))
+        result = await session.scalars(
+            select(Inventory)
+            .where(Inventory.pl_id == player_id)
+            .options(selectinload(Inventory.base))
+        )
         items = []
         for record in result.all():
             item = record.base
@@ -79,15 +66,15 @@ async def inventory_data(request: web.Request) -> web.Response:
         return web.json_response({"items": items, "gold": player.gold})
 
 
-def create_app() -> web.Application:
+def create_app(bot_token: str) -> web.Application:
     app = web.Application()
-    app.router.add_post("/inventory/login", login)
+    app["bot_token"] = bot_token
     app.router.add_get("/inventory/data", inventory_data)
     return app
 
 
-async def start_inventory_web() -> web.AppRunner:
-    runner = web.AppRunner(create_app())
+async def start_inventory_web(bot_token: str) -> web.AppRunner:
+    runner = web.AppRunner(create_app(bot_token))
     await runner.setup()
     site = web.TCPSite(runner, "127.0.0.1", 8765)
     await site.start()

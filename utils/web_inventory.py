@@ -57,6 +57,34 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
 
 
 async def inventory_data(request: web.Request):
+    # Прямое открытие картинки в обычном браузере для проверки.
+    # Отдаём только изображения предметов, не данные инвентаря.
+    raw_image_id = request.query.get("image")
+    if raw_image_id and request.query.get("raw") == "1":
+        placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
+        print(placeholder_path, flush=True)
+
+        if raw_image_id == "__placeholder__":
+            image_path = placeholder_path
+        else:
+            async with Session() as session:
+                item = await session.get(ItemBase, raw_image_id)
+                image_path = None
+                if item is not None and item.image_pathname:
+                    candidate = (
+                        PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
+                    ).resolve()
+                    if candidate.is_relative_to(PROJECT_ROOT) and candidate.is_file():
+                        image_path = candidate
+
+        if image_path is None or not image_path.is_file():
+            raise web.HTTPNotFound(text="Изображение не найдено")
+
+        return web.FileResponse(
+            image_path,
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
+
     init_data = request.headers.get("X-Telegram-Init-Data", "")
     try:
         identity = validate_init_data(init_data, request.app["bot_token"])

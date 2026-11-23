@@ -62,11 +62,11 @@ async def inventory_image(request: web.Request) -> web.StreamResponse:
             raise web.HTTPNotFound()
 
         project_root = Path(__file__).resolve().parent.parent
-        image_path = (project_root / item.image_pathname / f"{item.id}.png").resolve()
         try:
+            image_path = (project_root / item.image_pathname / f"{item.id}.png").resolve()
             image_path.relative_to(project_root)
-        except ValueError:
-            raise web.HTTPNotFound()
+        except (TypeError, ValueError):
+            image_path = project_root / "images" / "placeholder.png"
 
         if not image_path.is_file():
             image_path = project_root / "images" / "placeholder.png"

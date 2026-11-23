@@ -41,7 +41,7 @@ web_runner = None
 async def inventory_web_login(message):
     token = create_login_token(message.from_user.id)
     await message.answer(
-        "Ссылка для входа в веб-инвентарь (действует 10 минут и открывается один раз):\\n"
+        "Ссылка для входа в веб-инвентарь (действует 10 минут и открывается один раз):\n"
         f"{WEB_URL}/#token={token}"
     )
 

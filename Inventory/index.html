@@ -8,29 +8,28 @@
   <title>Инвентарь — Mobifield</title>
   <style>
     :root {
-      color-scheme:dark; --gold:#e7d6ad; --gold2:#c5ae7e; --text:#f4f0e7;
-      --muted:#d2d0c8; --common:#aab5bb; --rare:#64c2e0; --epic:#c19ae9; --legendary:#f3c66d;
+      color-scheme:dark; --gold:#b99a68; --gold2:#806747; --text:#e5dfd2;
+      --muted:#9d9a91; --common:#777b78; --rare:#638b9b; --epic:#80658f; --legendary:#b18a4e;
     }
     * { box-sizing:border-box; }
     html { min-height:100%; background:#283a4c; }
     body {
-      margin:0; min-height:100vh; color:var(--text); font:14px/1.4 "Trebuchet MS",Arial,sans-serif;
+      margin:0; min-height:100vh; color:var(--text); font:14px/1.4 "Trebuchet MS",Georgia,serif;
       background:
-        radial-gradient(ellipse at 16% 80%,#9ab66b 0,transparent 38%),
-        radial-gradient(ellipse at 80% 70%,#6d9b91 0,transparent 42%),
-        radial-gradient(ellipse at 55% 25%,#8199a8 0,transparent 50%),
-        linear-gradient(145deg,#334b68,#7b9aa0 52%,#9ebd79);
+        radial-gradient(ellipse at 50% -20%,#34302b 0,transparent 48%),
+        radial-gradient(ellipse at 10% 100%,#252a27 0,transparent 42%),
+        linear-gradient(145deg,#111513,#1b211e 52%,#101412);
       background-attachment:scroll;
     }
     /* Не размываем весь viewport при каждом кадре прокрутки. */
-    body:before { content:""; position:absolute; inset:0 0 auto; height:100vh; z-index:-1; background:#15283a18; pointer-events:none; }
+    body:before { content:""; position:absolute; inset:0 0 auto; height:100vh; z-index:-1; background:radial-gradient(ellipse at center,#a18a5b0b,transparent 68%); pointer-events:none; }
     button,input,select { font:inherit; }
     button { color:inherit; }
     .page { width:min(1500px,100%); min-height:100vh; margin:0 auto; padding:0 22px 18px; display:flex; flex-direction:column; }
     .topbar {
       min-height:58px; display:flex; align-items:center; gap:18px; margin:0 -22px 18px; padding:0 22px;
-      background:linear-gradient(90deg,#263b57ed,#344c65e8 55%,#24364fed);
-      border-bottom:1px solid #d8d9d2a0; box-shadow:0 3px 14px #17263855;
+      background:linear-gradient(90deg,#171b19f5,#292a24f2 55%,#171b19f5);
+      border-bottom:1px solid #8b744b88; box-shadow:0 3px 14px #0009;
     }
     .brand { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
     .brand-mark { width:32px; height:32px; display:grid; place-items:center; border:1px solid #d7c59b; border-radius:7px; color:#e8d6ad; font-size:19px; background:#e8d6ad18; }
@@ -40,7 +39,7 @@
     .layout { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1.9fr) minmax(280px,.82fr); gap:16px; align-items:stretch; }
     .inventory { min-width:0; display:flex; flex-direction:column; }
     .toolbar { display:flex; flex-direction:column; gap:0; margin-bottom:10px; }
-    .tabs { display:flex; align-items:stretch; justify-content:center; gap:5px; min-height:55px; border-bottom:1px solid #e7dfcc9c; background:linear-gradient(180deg,#344b64d9,#2d4055c9); padding:0 8px; }
+    .tabs { display:flex; align-items:stretch; justify-content:center; gap:5px; min-height:55px; border-bottom:1px solid #8b744b88; background:linear-gradient(180deg,#282923ed,#1c201ded); padding:0 8px; }
     .tab {
       position:relative; flex:1 1 0; min-width:48px; max-width:88px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
       border:0; border-bottom:2px solid transparent; background:transparent; color:#d8dce0; padding:5px 4px;
@@ -60,36 +59,36 @@
     .item {
       position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
       min-width:0; min-height:104px; aspect-ratio:.82; padding:6px 4px 5px;
-      border:1px solid #e4e3d8; border-radius:3px; color:#3f4a50; cursor:pointer; text-align:center;
-      background:linear-gradient(150deg,#e8e8dfef,#cbd4d2ed);
-      box-shadow:inset 0 0 0 1px #ffffff8a;
+      border:1px solid #766d5b; border-radius:2px; color:#e2dccd; cursor:pointer; text-align:center;
+      background:linear-gradient(150deg,#45453d,#292d29);
+      box-shadow:inset 0 0 0 1px #bba77a24;
     }
     .item:before { content:""; position:absolute; inset:3px; border:1px solid #ffffff6b; pointer-events:none; }
     .item:hover { border-color:#fff0c6; }
     .item.selected { outline:2px solid #fff3c9; outline-offset:1px; box-shadow:inset 0 0 0 2px #b99a5a; }
-    .item.common { background:linear-gradient(150deg,#dce0dceF,#aebdc1ef); }
-    .item.rare { background:linear-gradient(150deg,#b7dce8f2,#5d9db7f2); }
-    .item.epic { background:linear-gradient(150deg,#d8c7eaf2,#8d70b1f2); }
-    .item.legendary { background:linear-gradient(150deg,#f0d9a7f2,#b98a4df2); }
+    .item.common { background:linear-gradient(150deg,#555750,#343934); }
+    .item.rare { background:linear-gradient(150deg,#35545a,#23383d); }
+    .item.epic { background:linear-gradient(150deg,#55405f,#34283f); }
+    .item.legendary { background:linear-gradient(150deg,#6b5330,#403323); }
     .item-icon { display:grid; place-items:center; width:100%; flex:1; min-height:0; font-size:32px; }
     .item-icon img { max-width:100%; max-height:68px; object-fit:contain; filter:drop-shadow(0 2px 2px #25313a66); }
-    .item-name { display:block; width:100%; color:#35434d; font-size:10px; line-height:1.12; overflow-wrap:anywhere; text-shadow:0 1px #ffffff80; }
+    .item-name { display:block; width:100%; color:#e3ddcf; font-size:10px; line-height:1.12; overflow-wrap:anywhere; text-shadow:0 1px #ffffff80; }
     .quantity { position:absolute; top:3px; left:4px; color:#fff; font:10px Arial,sans-serif; text-shadow:0 1px 3px #172536; }
     .detail {
       min-width:0; display:flex; flex-direction:column; align-self:start; overflow:hidden;
-      border:1px solid #e8e3d4; border-radius:4px; background:#eee9dcf2; color:#38444d;
+      border:1px solid #8b744b; border-radius:2px; background:linear-gradient(155deg,#292d29f5,#1a201df5); color:#e5dfd2;
       box-shadow:0 4px 18px #1b2d3d66;
     }
-    .detail-head { padding:10px 13px; color:#fff8e8; background:linear-gradient(90deg,#5c83b7,#739dca 65%,#5279a9); border-bottom:1px solid #d8e4ee; font:600 19px Georgia,serif; text-shadow:0 1px 2px #29446188; }
-    .art { display:grid; place-items:center; min-height:190px; margin:0; padding:12px; background:radial-gradient(ellipse,#a6c4cc 0,#76a5b5 48%,#56859c 100%); border-bottom:1px solid #c8d0cb; font-size:76px; }
+    .detail-head { padding:10px 13px; color:#fff8e8; background:linear-gradient(90deg,#51432f,#6a5738 65%,#403629); border-bottom:1px solid #a78a59; font:600 19px Georgia,serif; text-shadow:0 1px 2px #29446188; }
+    .art { display:grid; place-items:center; min-height:190px; margin:0; padding:12px; background:radial-gradient(ellipse,#45473d 0,#292f2a 48%,#171d1a 100%); border-bottom:1px solid #76694f; font-size:76px; }
     .detail-image { max-width:100%; max-height:205px; object-fit:contain; filter:drop-shadow(0 5px 5px #263c4b66); }
     .rarity { padding:10px 14px 0; font:11px Arial,sans-serif; text-transform:uppercase; letter-spacing:.08em; color:#64717a; }
     .rarity.common { color:#69777e; } .rarity.rare { color:#2783a6; } .rarity.epic { color:#8554b4; } .rarity.legendary { color:#a87825; }
-    h2 { margin:3px 14px 8px; color:#35434d; font:600 21px Georgia,serif; }
-    .description { margin:0 14px 14px; color:#48535a; font:13px/1.35 Georgia,serif; white-space:pre-line; }
+    h2 { margin:3px 14px 8px; color:#e8dfcb; font:600 21px Georgia,serif; }
+    .description { margin:0 14px 14px; color:#bcb8ad; font:13px/1.35 Georgia,serif; white-space:pre-line; }
     .stats { margin-top:auto; padding:0 14px 12px; }
-    .stat { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid #c9c8bd; color:#69747a; font:12px Arial,sans-serif; }
-    .stat strong { color:#35434d; font-weight:600; text-align:right; }
+    .stat { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid #c9c8bd; color:#aaa69b; font:12px Arial,sans-serif; }
+    .stat strong { color:#e0d7c3; font-weight:600; text-align:right; }
     .empty { grid-column:1/-1; padding:42px 12px; text-align:center; color:#fff; text-shadow:0 1px 3px #253747; border:1px dashed #ffffffa0; background:#24394b40; }
     .hint { display:none; }
     .notice { margin-top:10px; padding:8px 11px; border-left:2px solid #f0d8a3; color:#fff4d9; background:#263c526e; font:11px/1.4 Arial,sans-serif; }
@@ -180,7 +179,7 @@
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark">♜</span>
-        <div class="eyebrow">Mobifield&nbsp; / &nbsp;Инвентарь</div>
+        <div class="eyebrow">Инвентарь</div>
       </div>
       <div class="wallet">◈ <span id="gold">—</span> золота</div>
     </header>

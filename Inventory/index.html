@@ -1,12 +1,218 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111820">
+  <title>Инвентарь — Mobifield</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10171d; --panel: #19232b; --panel-2: #202c35;
+      --line: #39454d; --gold: #c6a66a; --text: #e7e2d8;
+      --muted: #929da2; --common: #9da6a8; --rare: #55a9bd;
+      --epic: #a783d5; --legendary: #d7a64f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      background: radial-gradient(ellipse at 50% -20%, #34414a 0, transparent 55%), var(--bg);
+      font: 15px/1.45 Georgia, "Times New Roman", serif;
+    }
+    button, input { font: inherit; }
+    .page { max-width: 1440px; margin: 0 auto; padding: 30px clamp(14px, 3vw, 42px) 48px; }
+    .topbar { display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:22px; }
+    .eyebrow { color:var(--gold); text-transform:uppercase; letter-spacing:.22em; font:11px/1.4 Arial,sans-serif; }
+    h1 { margin:5px 0 0; font-size:clamp(27px,4vw,40px); font-weight:500; letter-spacing:.07em; }
+    .wallet { border:1px solid #66583d; background:#211f1a; color:#e8c982; padding:10px 15px; white-space:nowrap; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(290px,.85fr); gap:18px; align-items:stretch; }
+    .panel { border:1px solid var(--line); background:linear-gradient(145deg,rgba(34,47,56,.97),rgba(22,31,38,.98)); box-shadow:0 16px 40px #0004; }
+    .inventory { padding:20px; }
+    .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-bottom:17px; }
+    .tabs { display:flex; flex-wrap:wrap; gap:6px; flex:1; }
+    .tab, .sort, .search { border:1px solid var(--line); background:#121b21; color:var(--muted); min-height:38px; }
+    .tab { padding:7px 12px; cursor:pointer; }
+    .tab.active { color:#f0d69e; border-color:#9c8050; background:#302b22; }
+    .search { width:min(220px,100%); padding:8px 11px; outline:none; }
+    .search:focus { border-color:var(--gold); }
+    .sort { padding:7px 10px; }
+    .countline { display:flex; justify-content:space-between; color:var(--muted); font:12px Arial,sans-serif; margin:0 2px 12px; }
+    .items { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:9px; }
+    .item { position:relative; min-height:112px; border:1px solid #59636a; background:linear-gradient(145deg,#35424a,#202b32); color:var(--text); padding:10px 7px 8px; cursor:pointer; text-align:center; transition:.15s ease; }
+    .item:hover { transform:translateY(-2px); filter:brightness(1.13); }
+    .item.selected { outline:2px solid var(--gold); outline-offset:1px; background:linear-gradient(145deg,#4a4537,#293039); }
+    .item.common { border-color:#78858a; } .item.rare { border-color:var(--rare); }
+    .item.epic { border-color:var(--epic); } .item.legendary { border-color:var(--legendary); }
+    .item-icon { display:block; font-size:34px; line-height:1.5; margin-bottom:3px; }
+    .item-name { display:block; font-size:12px; line-height:1.25; overflow-wrap:anywhere; }
+    .quantity { position:absolute; right:7px; bottom:5px; color:#f1dfb7; font:11px Arial,sans-serif; }
+    .detail { padding:22px; display:flex; flex-direction:column; min-height:440px; }
+    .detail-head { color:var(--gold); font:11px Arial,sans-serif; letter-spacing:.2em; text-transform:uppercase; }
+    .art { display:grid; place-items:center; min-height:190px; margin:16px 0; border:1px solid #48545b; background:radial-gradient(ellipse,#46515a 0,#27333b 55%,#1b252c 100%); font-size:76px; }
+    .rarity { font:11px Arial,sans-serif; text-transform:uppercase; letter-spacing:.16em; }
+    .rarity.common { color:var(--common); } .rarity.rare { color:var(--rare); }
+    .rarity.epic { color:var(--epic); } .rarity.legendary { color:var(--legendary); }
+    h2 { font-size:25px; font-weight:500; margin:7px 0 10px; }
+    .description { color:#b9c0c1; min-height:74px; margin:0 0 18px; }
+    .stats { border-top:1px solid var(--line); margin-top:auto; }
+    .stat { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #303c44; color:var(--muted); }
+    .stat strong { color:var(--text); font-weight:400; text-align:right; }
+    .empty { grid-column:1/-1; padding:50px 15px; text-align:center; color:var(--muted); border:1px dashed #53616a; }
+    .hint { color:var(--muted); font:12px Arial,sans-serif; margin-top:18px; }
+    .notice { margin-top:14px; padding:10px 12px; border-left:2px solid var(--gold); color:#c4b99f; background:#28271f; font:12px/1.5 Arial,sans-serif; }
+    @media (max-width:850px) { .layout { grid-template-columns:1fr; } .detail { min-height:0; } .art { min-height:145px; } }
+    @media (max-width:520px) { .page { padding:20px 12px 30px; } .topbar { align-items:start; flex-direction:column; } .inventory,.detail { padding:14px; } .items { grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; } .item { min-height:100px; } .search { flex:1; width:100%; } }
+  </style>
 </head>
 <body>
-<h1>Иди нахуй</h1>
-    
+  <main class="page">
+    <header class="topbar">
+      <div><div class="eyebrow">Mobifield · Снаряжение и добыча</div><h1>Инвентарь</h1></div>
+      <div class="wallet">◈ <span id="gold">—</span> золота</div>
+    </header>
+
+    <div class="layout">
+      <section class="panel inventory" aria-label="Список предметов">
+        <div class="toolbar">
+          <nav class="tabs" id="tabs" aria-label="Категории">
+            <button class="tab active" data-filter="all">Все</button>
+            <button class="tab" data-filter="fishing">Рыбалка</button>
+            <button class="tab" data-filter="hunting">Охота</button>
+            <button class="tab" data-filter="searching">Находки</button>
+            <button class="tab" data-filter="choping">Рубка</button>
+            <button class="tab" data-filter="mining">Добыча</button>
+          </nav>
+          <input class="search" id="search" type="search" placeholder="Найти предмет…" aria-label="Поиск предметов">
+          <select class="sort" id="sort" aria-label="Сортировка">
+            <option value="name">По названию</option>
+            <option value="rarity">По редкости</option>
+            <option value="count">По количеству</option>
+          </select>
+        </div>
+        <div class="countline"><span>ПРЕДМЕТЫ</span><span id="total">0 предметов</span></div>
+        <div class="items" id="items"><div class="empty">Загружаем содержимое сумки…</div></div>
+        <p class="hint">Выбери предмет, чтобы увидеть его свойства и описание.</p>
+      </section>
+
+      <aside class="panel detail" id="detail" aria-live="polite">
+        <div class="detail-head">Сведения о предмете</div>
+        <div class="art">◇</div>
+        <div class="rarity">Предмет не выбран</div>
+        <h2>Твоя поклажа</h2>
+        <p class="description">Выбери предмет в списке слева — здесь появятся его описание, редкость, количество и стоимость.</p>
+        <div class="stats">
+          <div class="stat"><span>Количество</span><strong>—</strong></div>
+          <div class="stat"><span>Стоимость</span><strong>—</strong></div>
+        </div>
+      </aside>
+    </div>
+    <div class="notice" id="notice">Интерфейс готов. Для загрузки реальных предметов требуется подключить API к игровой базе данных.</div>
+  </main>
+
+  <script>
+    const state = { items: [], filter: "all", selected: null, query: "", sort: "name" };
+    const rarityNames = { common: "Обычный", rare: "Редкий", epic: "Эпический", legendary: "Легендарный" };
+    const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
+    const icons = { fishing:"🐟", hunting:"🦌", searching:"🧭", choping:"🪵", mining:"⛏️" };
+    const $ = id => document.getElementById(id);
+
+    function visibleItems() {
+      return state.items.filter(item =>
+        (state.filter === "all" || item.type === state.filter) &&
+        String(item.name || "").toLocaleLowerCase("ru").includes(state.query)
+      ).sort((a,b) => {
+        if (state.sort === "count") return (b.count || 0) - (a.count || 0);
+        if (state.sort === "rarity") return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+        return String(a.name || "").localeCompare(String(b.name || ""), "ru");
+      });
+    }
+
+    function render() {
+      const list = visibleItems();
+      $("total").textContent = list.length + " предметов";
+      $("items").replaceChildren();
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = state.items.length ? "Ничего не найдено." : "Инвентарь пока пуст.";
+        $("items").append(empty);
+        return;
+      }
+      list.forEach(item => {
+        const button = document.createElement("button");
+        button.className = "item " + (item.rarity || "common") + (state.selected === item.id ? " selected" : "");
+        button.type = "button";
+        button.setAttribute("aria-label", item.name + ", количество " + item.count);
+        const icon = document.createElement("span");
+        icon.className = "item-icon";
+        icon.textContent = item.icon || icons[item.type] || "✦";
+        const name = document.createElement("span");
+        name.className = "item-name";
+        name.textContent = item.name;
+        const quantity = document.createElement("span");
+        quantity.className = "quantity";
+        quantity.textContent = "×" + item.count;
+        button.append(icon,name,quantity);
+        button.addEventListener("click", () => { state.selected = item.id; render(); renderDetail(item); });
+        $("items").append(button);
+      });
+    }
+
+    function renderDetail(item) {
+      const panel = $("detail");
+      panel.replaceChildren();
+      const add = (tag, cls, value) => {
+        const el = document.createElement(tag);
+        if (cls) el.className = cls;
+        el.textContent = value;
+        panel.append(el);
+        return el;
+      };
+      add("div","detail-head","Сведения о предмете");
+      add("div","art",item.icon || icons[item.type] || "✦");
+      add("div","rarity " + (item.rarity || "common"),rarityNames[item.rarity] || "Неизвестная редкость");
+      add("h2","",item.name || "Без названия");
+      add("p","description",item.description || "Об этом предмете пока ничего не известно.");
+      const stats = document.createElement("div"); stats.className = "stats";
+      [[ "Количество", item.count ],[ "Стоимость за штуку", (item.cost ?? "—") + (item.cost != null ? " золота" : "") ],[ "Общая стоимость", item.cost != null ? (item.cost * item.count) + " золота" : "—" ]].forEach(([label,value]) => {
+        const row = document.createElement("div"); row.className = "stat";
+        const left = document.createElement("span"); left.textContent = label;
+        const right = document.createElement("strong"); right.textContent = value;
+        row.append(left,right); stats.append(row);
+      });
+      panel.append(stats);
+    }
+
+    $("tabs").addEventListener("click", event => {
+      const button = event.target.closest("button[data-filter]");
+      if (!button) return;
+      state.filter = button.dataset.filter;
+      $("tabs").querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab === button));
+      render();
+    });
+    $("search").addEventListener("input", event => { state.query = event.target.value.trim().toLocaleLowerCase("ru"); render(); });
+    $("sort").addEventListener("change", event => { state.sort = event.target.value; render(); });
+
+    async function loadInventory() {
+      try {
+        const response = await fetch("/api/inventory", { credentials: "same-origin", headers: { "Accept": "application/json" } });
+        if (!response.ok) throw new Error("API вернул HTTP " + response.status);
+        const data = await response.json();
+        state.items = Array.isArray(data) ? data : (data.items || []);
+        if (data.gold != null) $("gold").textContent = data.gold;
+        $("notice").hidden = true;
+        render();
+        if (state.items.length) {
+          state.selected = state.items[0].id;
+          render(); renderDetail(state.items[0]);
+        }
+      } catch (error) {
+        $("items").innerHTML = '<div class="empty">Не удалось загрузить инвентарь.<br>Ожидается подключение API <code>/api/inventory</code>.</div>';
+        $("notice").textContent = "Веб-интерфейс уже свёрстан, но серверный API ещё не подключён. Сам HTML не должен получать доступ к SQLite напрямую.";
+        console.info("Mobifield inventory:", error.message);
+      }
+    }
+    loadInventory();
+  </script>
 </body>
 </html>

@@ -66,44 +66,45 @@ async def inventory_data(request: web.Request):
     player_id = identity["user_id"]
     image_id = request.query.get("image")
     if image_id:
-        async with Session() as session:
-            item = await session.get(ItemBase, image_id)
-            placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
+        placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
 
-            # У предмета может не быть image_pathname или отдельного файла.
-            image_path = None
-            if item is not None and item.image_pathname:
-                candidate = (
-                    PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
-                ).resolve()
-                if candidate.is_file():
-                    image_path = candidate
+        # Mini App запрашивает заглушку один раз и переиспользует её для всех предметов.
+        if image_id == "__placeholder__":
+            image_path = placeholder_path
+        else:
+            async with Session() as session:
+                item = await session.get(ItemBase, image_id)
+                image_path = None
+                if item is not None and item.image_pathname:
+                    candidate = (
+                        PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
+                    ).resolve()
+                    if candidate.is_file():
+                        image_path = candidate
 
-            if image_path is None:
-                image_path = placeholder_path
-                print(
-                    f"[Mobifield inventory] item={image_id} "
-                    f"using_placeholder={image_path} "
-                    f"exists={image_path.is_file()}",
-                    flush=True,
-                )
-            else:
-                print(
-                    f"[Mobifield inventory] item={image_id} "
-                    f"image_path={image_path} exists=True",
-                    flush=True,
-                )
+                if image_path is None:
+                    print(
+                        f"[Mobifield inventory] item={image_id} "
+                        f"has_no_image; placeholder will be shared",
+                        flush=True,
+                    )
+                    return web.json_response({"image": None, "placeholder": True})
 
-            try:
-                image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
-            except OSError as error:
-                print(
-                    f"[Mobifield inventory] image_read_error={error}",
-                    flush=True,
-                )
-                return web.json_response({"image": None}, status=500)
+        print(
+            f"[Mobifield inventory] image={image_id} "
+            f"image_path={image_path} exists={image_path.is_file()}",
+            flush=True,
+        )
+        try:
+            image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
+        except OSError as error:
+            print(
+                f"[Mobifield inventory] image_read_error={error}",
+                flush=True,
+            )
+            return web.json_response({"image": None}, status=500)
 
-            return web.json_response({"image": "data:image/png;base64," + image_data})
+        return web.json_response({"image": "data:image/png;base64," + image_data})
 
     async with Session() as session:
         player = await session.get(PlayerModel, player_id)

@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from utils.LockMiddleware import ExplorationLockMiddleware
 from aiogram import Dispatcher
+from aiogram.filters import Command
+from utils.web_inventory import WEB_URL, create_login_token, start_inventory_web
 from utils.database import init_db, close_db
 
 from utils.str import SQLiteStorage
@@ -33,6 +35,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mobifield")
 
+web_runner = None
+
+
+async def inventory_web_login(message):
+    token = create_login_token(message.from_user.id)
+    await message.answer(
+        "Ссылка для входа в веб-инвентарь (действует 10 минут и открывается один раз):\\n"
+        f"{WEB_URL}/#token={token}"
+    )
+
 storage = SQLiteStorage()
 dp = Dispatcher(bot=bot, storage=storage)
 
@@ -43,6 +55,8 @@ exploration_lock = ExplorationLockMiddleware()
 dp.message.outer_middleware(exploration_lock)
 dp.callback_query.outer_middleware(exploration_lock)
 
+dp.message.register(inventory_web_login, Command("web_inventory"))
+
 dp.include_router(reg)
 reg.include_router(twn)
 twn.include_router(out)
@@ -50,11 +64,18 @@ twn.include_router(guild)
 
 
 async def on_startup() -> None:
+    global web_runner
     await init_db()
+    web_runner = await start_inventory_web()
+    logger.info("Веб-инвентарь запущен на 127.0.0.1:8765")
     logger.info("Бот запускается")
 
 
 async def on_shutdown() -> None:
+    global web_runner
+    if web_runner is not None:
+        await web_runner.cleanup()
+        web_runner = None
     await close_db()
     logger.info("Бот останавливается")
     

@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import time
+from pathlib import Path
 from urllib.parse import parse_qsl
 
 from aiohttp import web
@@ -53,7 +54,28 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
     return {"user_id": player_id}
 
 
-async def inventory_data(request: web.Request) -> web.Response:
+async def inventory_image(request: web.Request) -> web.StreamResponse:
+    item_id = request.match_info["item_id"]
+    async with Session() as session:
+        item = await session.get(ItemBase, item_id)
+        if item is None:
+            raise web.HTTPNotFound()
+
+        project_root = Path(__file__).resolve().parent.parent
+        image_path = (project_root / item.image_pathname / f"{item.id}.png").resolve()
+        try:
+            image_path.relative_to(project_root)
+        except ValueError:
+            raise web.HTTPNotFound()
+
+        if not image_path.is_file():
+            image_path = project_root / "images" / "placeholder.png"
+        if not image_path.is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(image_path)
+
+
+async def inventory_data(request: web.Request):
     init_data = request.headers.get("X-Telegram-Init-Data", "")
     try:
         identity = validate_init_data(init_data, request.app["bot_token"])
@@ -85,7 +107,7 @@ async def inventory_data(request: web.Request) -> web.Response:
                 "rarity": item.rarity,
                 "cost": item.cost,
                 "description": item.description,
-                "image": item.image_pathname,
+                "image": f"/inventory/image/{item.id}",
             })
 
         return web.json_response({"items": items, "gold": player.gold})
@@ -95,6 +117,7 @@ def create_app(bot_token: str) -> web.Application:
     app = web.Application()
     app["bot_token"] = bot_token
     app.router.add_get("/inventory/data", inventory_data)
+    app.router.add_get("/inventory/image/{item_id}", inventory_image)
     return app
 
 

@@ -63,6 +63,24 @@ async def inventory_data(request: web.Request):
         return web.json_response({"error": str(error)}, status=401)
 
     player_id = identity["user_id"]
+    image_id = request.query.get("image")
+    if image_id:
+        async with Session() as session:
+            item = await session.get(ItemBase, image_id)
+            if item is None:
+                return web.json_response({"error": "Предмет не найден"}, status=404)
+            try:
+                image_path = Path(item.image_pathname + f"/{item.id}.png")
+            except (TypeError, ValueError):
+                image_path = Path("./images/placeholder.png")
+            if not image_path.is_file():
+                image_path = Path("./images/placeholder.png")
+            try:
+                image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
+            except OSError:
+                return web.json_response({"image": None})
+            return web.json_response({"image": "data:image/png;base64," + image_data})
+
     async with Session() as session:
         player = await session.get(PlayerModel, player_id)
         if player is None:
@@ -79,23 +97,6 @@ async def inventory_data(request: web.Request):
             item = record.base
             if item is None:
                 continue
-            try:
-                image_path = Path(item.image_pathname + f"/{item.id}.png")
-            except (TypeError, ValueError):
-                image_path = Path("./images/placeholder.png")
-
-            if not image_path.is_file():
-                image_path = Path("./images/placeholder.png")
-
-            image_data = ""
-            try:
-                if image_path.is_file():
-                    image_data = "data:image/png;base64," + base64.b64encode(
-                        image_path.read_bytes()
-                    ).decode("ascii")
-            except OSError:
-                image_data = ""
-
             items.append({
                 "id": item.id,
                 "name": item.name,
@@ -104,7 +105,6 @@ async def inventory_data(request: web.Request):
                 "rarity": item.rarity,
                 "cost": item.cost,
                 "description": item.description,
-                "image": image_data,
             })
 
         return web.json_response({"items": items, "gold": player.gold})

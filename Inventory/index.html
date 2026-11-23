@@ -63,7 +63,63 @@
     .empty { grid-column:1/-1; padding:50px 15px; text-align:center; color:var(--muted); border:1px dashed #53616a; }
     .hint { color:var(--muted); font:12px Arial,sans-serif; margin-top:18px; }
     .notice { margin-top:14px; padding:10px 12px; border-left:2px solid var(--gold); color:#c4b99f; background:#28271f; font:12px/1.5 Arial,sans-serif; }
-    @media (max-width:850px) { .layout { grid-template-columns:1fr; } .detail { min-height:0; } .art { min-height:145px; } }
+    /* Планшеты и телефоны */
+    @media (max-width:850px) {
+      .page { padding:20px 16px calc(28px + env(safe-area-inset-bottom)); }
+      .layout { grid-template-columns:minmax(0,1fr); gap:14px; }
+      .inventory { min-width:0; }
+      .detail { min-height:0; }
+      .art { min-height:150px; margin:12px 0; }
+    }
+    @media (max-width:520px) {
+      body { font-size:14px; }
+      .page { padding: max(12px, env(safe-area-inset-top)) 10px calc(20px + env(safe-area-inset-bottom)); }
+      .topbar { flex-direction:row; align-items:center; gap:10px; margin-bottom:12px; }
+      .eyebrow { font-size:9px; letter-spacing:.13em; }
+      h1 { margin-top:3px; font-size:clamp(23px,7vw,30px); letter-spacing:.04em; }
+      .wallet { padding:9px 10px; font-size:13px; }
+      .layout { gap:10px; }
+      .inventory,.detail { padding:12px; }
+      .toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; margin-bottom:12px; }
+      .tabs {
+        grid-column:1/-1; flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
+        scrollbar-width:none; padding:1px 1px 5px; margin:0 -1px;
+      }
+      .tabs::-webkit-scrollbar { display:none; }
+      .tab { flex:0 0 auto; min-height:40px; padding:8px 11px; white-space:nowrap; }
+      .search { width:100%; min-width:0; min-height:42px; font-size:16px; }
+      .sort { min-height:42px; max-width:130px; padding:7px 8px; }
+      .countline { margin-bottom:9px; font-size:11px; }
+      .items { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+      .item { min-width:0; min-height:100px; padding:8px 4px 9px; }
+      .item-icon { height:54px; margin-bottom:4px; }
+      .item-icon img { max-height:54px; }
+      .item-name { font-size:11px; line-height:1.2; }
+      .quantity { right:5px; bottom:4px; font-size:10px; }
+      .detail-head,.rarity { font-size:10px; }
+      .art { min-height:135px; margin:10px 0; font-size:62px; }
+      .detail-image { max-height:170px; }
+      h2 { font-size:22px; }
+      .description { min-height:0; margin-bottom:14px; }
+      .stat { padding:9px 0; }
+      .hint { margin-top:12px; font-size:11px; }
+      .notice { font-size:11px; }
+    }
+    @media (max-width:360px) {
+      .page { padding-left:8px; padding-right:8px; }
+      .inventory,.detail { padding:10px; }
+      .items { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .topbar { align-items:flex-start; }
+      .wallet { font-size:12px; padding:8px; }
+      .sort { max-width:112px; font-size:13px; }
+    }
+    @media (hover:none) {
+      .item:hover { transform:none; filter:none; }
+      .item:active { filter:brightness(1.15); }
+    }
+    .tab:focus-visible,.item:focus-visible,.sort:focus-visible,.search:focus-visible {
+      outline:2px solid var(--gold); outline-offset:2px;
+    }
     @media (max-width:520px) { .page { padding:20px 12px 30px; } .topbar { align-items:start; flex-direction:column; } .inventory,.detail { padding:14px; } .items { grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; } .item { min-height:100px; } .search { flex:1; width:100%; } }
   </style>
 </head>

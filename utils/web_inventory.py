@@ -9,7 +9,7 @@ from aiohttp import web
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from utils.database import Inventory, PlayerModel, Session
+from utils.database import Inventory, ItemBase, PlayerModel, Session
 
 
 WEB_HOST = "127.0.0.1"

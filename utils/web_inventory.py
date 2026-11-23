@@ -1,9 +1,7 @@
 import hashlib
 import hmac
 import json
-import ssl
 import time
-from pathlib import Path
 from urllib.parse import parse_qsl
 
 from aiohttp import web
@@ -13,12 +11,8 @@ from sqlalchemy.orm import selectinload
 from utils.database import Inventory, PlayerModel, Session
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-INDEX_FILE = BASE_DIR / "Inventory" / "index.html"
-CERT_FILE = Path("/etc/letsencrypt/live/mobifield.duckdns.org/fullchain.pem")
-KEY_FILE = Path("/etc/letsencrypt/live/mobifield.duckdns.org/privkey.pem")
-HTTPS_HOST = "0.0.0.0"
-HTTPS_PORT = 68
+WEB_HOST = "127.0.0.1"
+WEB_PORT = 8765
 
 
 def validate_init_data(init_data: str, bot_token: str) -> dict:
@@ -57,10 +51,6 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
         raise ValueError("В initData отсутствует Telegram user ID")
 
     return {"user_id": player_id}
-
-
-async def index_page(request: web.Request) -> web.FileResponse:
-    return web.FileResponse(INDEX_FILE)
 
 
 async def inventory_data(request: web.Request) -> web.Response:
@@ -104,26 +94,14 @@ async def inventory_data(request: web.Request) -> web.Response:
 def create_app(bot_token: str) -> web.Application:
     app = web.Application()
     app["bot_token"] = bot_token
-    app.router.add_get("/", index_page)
     app.router.add_get("/inventory/data", inventory_data)
     return app
 
 
 async def start_inventory_web(bot_token: str) -> web.AppRunner:
-    if not CERT_FILE.is_file() or not KEY_FILE.is_file():
-        raise FileNotFoundError(
-            "Не найдены HTTPS-сертификат или ключ: "
-            f"{CERT_FILE}, {KEY_FILE}"
-        )
-
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    ssl_context.load_cert_chain(str(CERT_FILE), str(KEY_FILE))
-
     runner = web.AppRunner(create_app(bot_token))
     await runner.setup()
-    site = web.TCPSite(
-        runner, HTTPS_HOST, HTTPS_PORT, ssl_context=ssl_context
-    )
+    site = web.TCPSite(runner, WEB_HOST, WEB_PORT)
     try:
         await site.start()
     except Exception:

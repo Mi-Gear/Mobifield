@@ -231,7 +231,7 @@
         console.info("Mobifield inventory:", error.message);
       }
     }
-    loadInventory();
+    if (window.Telegram?.WebApp) {\n      window.Telegram.WebApp.ready();\n      window.Telegram.WebApp.expand();\n    }\n    loadInventory();
   </script>
 </body>
 </html>

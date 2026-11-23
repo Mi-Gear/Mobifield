@@ -152,6 +152,8 @@
           const image = document.createElement("img");
           image.src = item.image;
           image.alt = "";
+          image.loading = "lazy";
+          image.decoding = "async";
           image.onerror = () => { icon.textContent = item.icon || icons[item.type] || "✦"; };
           icon.append(image);
         } else {
@@ -186,6 +188,7 @@
         image.className = "detail-image";
         image.src = item.image;
         image.alt = item.name || "";
+        image.decoding = "async";
         image.onerror = () => { art.textContent = item.icon || icons[item.type] || "✦"; };
         art.append(image);
       } else {
@@ -235,15 +238,9 @@
         state.items = Array.isArray(data) ? data : (data.items || []);
         if (data.gold != null) $("gold").textContent = data.gold;
         $("notice").hidden = true;
-        render();
         if (state.items.length) {
           state.selected = state.items[0].id;
-          render();
-          renderDetail(state.items[0]);
         }
-
-        // PHP API возвращает готовые URL PNG в поле item.image.
-        // Браузер загружает файлы напрямую, без Base64 и дополнительных запросов за JSON.
         render();
         const selectedItem = state.items.find(item => item.id === state.selected);
         if (selectedItem) renderDetail(selectedItem);

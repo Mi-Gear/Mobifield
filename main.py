@@ -56,7 +56,7 @@ twn.include_router(guild)
 async def on_startup() -> None:
     global web_runner
     await init_db()
-    web_runner = await start_inventory_web()
+    web_runner = await start_inventory_web(bot.token)
     logger.info("Веб-инвентарь запущен на 127.0.0.1:8765")
     logger.info("Бот запускается")
 

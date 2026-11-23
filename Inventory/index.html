@@ -146,6 +146,15 @@
         width:min(270px,76vw); height:auto; max-height:calc(100dvh - 80px);
         display:flex; flex-direction:column; align-self:auto; overflow-y:auto;
         overscroll-behavior:contain; box-shadow:0 8px 24px #101d2d88;
+        transform:translateX(calc(100% + 20px)); visibility:hidden;
+        transition:transform .24s ease,visibility .24s;
+      }
+      .detail.open { transform:translateX(0); visibility:visible; }
+      .detail-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      .detail-close {
+        display:grid; place-items:center; flex:0 0 28px; width:28px; height:28px;
+        border:1px solid #ffffff88; border-radius:50%; background:#34577988;
+        color:#fff; font-size:20px; line-height:1; cursor:pointer;
       }
       .detail-head { flex:0 0 auto; }
       .art { flex:0 0 auto; min-height:150px; }
@@ -271,7 +280,7 @@
       });
     }
 
-    function renderDetail(item) {
+    function renderDetail(item, open = true) {
       const panel = $("detail");
       panel.replaceChildren();
       const add = (tag, cls, value) => {
@@ -281,7 +290,18 @@
         panel.append(el);
         return el;
       };
-      add("div","detail-head","Сведения о предмете");
+      const head = add("div","detail-head","");
+      const headText = document.createElement("span");
+      headText.textContent = "Сведения о предмете";
+      head.append(headText);
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "detail-close";
+      close.setAttribute("aria-label","Закрыть сведения");
+      close.textContent = "×";
+      close.addEventListener("click", () => panel.classList.remove("open"));
+      head.append(close);
+      if (open) panel.classList.add("open");
       const art = add("div","art","");
       if (item.image) {
         const image = document.createElement("img");
@@ -343,7 +363,7 @@
         }
         render();
         const selectedItem = state.items.find(item => item.id === state.selected);
-        if (selectedItem) renderDetail(selectedItem);
+        if (selectedItem) renderDetail(selectedItem, false);
       } catch (error) {
         $("items").replaceChildren();
         const empty = document.createElement("div");

@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import hmac
 import json
@@ -54,27 +55,6 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
     return {"user_id": player_id}
 
 
-async def inventory_image(request: web.Request) -> web.StreamResponse:
-    item_id = request.match_info["item_id"]
-    async with Session() as session:
-        item = await session.get(ItemBase, item_id)
-        if item is None:
-            raise web.HTTPNotFound()
-
-        project_root = Path(__file__).resolve().parent.parent
-        try:
-            image_path = (project_root / item.image_pathname / f"{item.id}.png").resolve()
-            image_path.relative_to(project_root)
-        except (TypeError, ValueError):
-            image_path = project_root / "images" / "placeholder.png"
-
-        if not image_path.is_file():
-            image_path = project_root / "images" / "placeholder.png"
-        if not image_path.is_file():
-            raise web.HTTPNotFound()
-        return web.FileResponse(image_path)
-
-
 async def inventory_data(request: web.Request):
     init_data = request.headers.get("X-Telegram-Init-Data", "")
     try:
@@ -99,6 +79,16 @@ async def inventory_data(request: web.Request):
             item = record.base
             if item is None:
                 continue
+            image_path = Path(item.image_pathname + f"/{item.id}.png")
+            if not image_path.is_file():
+                image_path = Path("./images/placeholder.png")
+
+            image_data = ""
+            if image_path.is_file():
+                image_data = "data:image/png;base64," + base64.b64encode(
+                    image_path.read_bytes()
+                ).decode("ascii")
+
             items.append({
                 "id": item.id,
                 "name": item.name,
@@ -107,7 +97,7 @@ async def inventory_data(request: web.Request):
                 "rarity": item.rarity,
                 "cost": item.cost,
                 "description": item.description,
-                "image": f"/inventory/image/{item.id}",
+                "image": image_data,
             })
 
         return web.json_response({"items": items, "gold": player.gold})
@@ -117,7 +107,6 @@ def create_app(bot_token: str) -> web.Application:
     app = web.Application()
     app["bot_token"] = bot_token
     app.router.add_get("/inventory/data", inventory_data)
-    app.router.add_get("/inventory/image/{item_id}", inventory_image)
     return app
 
 

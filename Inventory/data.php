@@ -13,7 +13,7 @@ if ($projectRoot === false) {
     exit('Project directory not found');
 }
 
-function jsonResponse(array $payload, int $status = 200): never
+function jsonResponse(array $payload, int $status = 200): void
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');

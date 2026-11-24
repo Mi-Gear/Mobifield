@@ -283,13 +283,8 @@
     <div class="layout">
       <section class="inventory" aria-label="Список предметов">
         <div class="toolbar">
-          <nav class="tabs" id="tabs" aria-label="Категории">
+          <nav class="tabs" id="tabs" aria-label="Фильтр по локациям">
             <button class="tab active" data-filter="all" data-symbol="✧">Все</button>
-            <button class="tab" data-filter="fishing" data-symbol="♧">Рыбалка</button>
-            <button class="tab" data-filter="hunting" data-symbol="♢">Охота</button>
-            <button class="tab" data-filter="searching" data-symbol="⚑">Находки</button>
-            <button class="tab" data-filter="choping" data-symbol="⚒">Рубка</button>
-            <button class="tab" data-filter="mining" data-symbol="◇">Добыча</button>
           </nav>
           <div class="search-sort">
             <input class="search" id="search" type="search" placeholder="Найти предмет…" aria-label="Поиск предметов">
@@ -323,12 +318,58 @@
     const state = { items: [], filter: "all", selected: null, query: "", sort: "name" };
     const rarityNames = { common: "Обычный", rare: "Редкий", epic: "Эпический", legendary: "Легендарный" };
     const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
-    const icons = { fishing:"🐟", hunting:"🦌", searching:"🧭", choping:"🪵", mining:"⛏️" };
+    const locationMeta = {
+      field: { label: "Поле", symbol: "✧", order: 1 },
+      forest: { label: "Лес", symbol: "♧", order: 2 },
+      ruins: { label: "Руины", symbol: "⚑", order: 3 },
+      darkforest: { label: "Тёмный лес", symbol: "☾", order: 4 }
+    };
     const $ = id => document.getElementById(id);
+
+    function locationLabel(location) {
+      const meta = locationMeta[location];
+      if (meta) return meta.label;
+      return String(location).replace(/[_-]+/g, " ").replace(/^./, char => char.toLocaleUpperCase("ru"));
+    }
+
+    function renderLocationFilters() {
+      const tabs = $("tabs");
+      const locations = [...new Set(
+        state.items.map(item => String(item.location || "").trim()).filter(Boolean)
+      )].sort((a, b) => {
+        const orderA = locationMeta[a]?.order ?? 100;
+        const orderB = locationMeta[b]?.order ?? 100;
+        return orderA - orderB || locationLabel(a).localeCompare(locationLabel(b), "ru");
+      });
+
+      if (state.filter !== "all" && !locations.includes(state.filter)) {
+        state.filter = "all";
+      }
+
+      const fragment = document.createDocumentFragment();
+      const allButton = document.createElement("button");
+      allButton.className = "tab" + (state.filter === "all" ? " active" : "");
+      allButton.dataset.filter = "all";
+      allButton.dataset.symbol = "✧";
+      allButton.textContent = "Все";
+      fragment.append(allButton);
+
+      locations.forEach(location => {
+        const meta = locationMeta[location] || {};
+        const button = document.createElement("button");
+        button.className = "tab" + (state.filter === location ? " active" : "");
+        button.dataset.filter = location;
+        button.dataset.symbol = meta.symbol || "◇";
+        button.textContent = locationLabel(location);
+        fragment.append(button);
+      });
+
+      tabs.replaceChildren(fragment);
+    }
 
     function visibleItems() {
       return state.items.filter(item =>
-        (state.filter === "all" || item.type === state.filter) &&
+        (state.filter === "all" || item.location === state.filter) &&
         String(item.name || "").toLocaleLowerCase("ru").includes(state.query)
       ).sort((a,b) => {
         if (state.sort === "count") return (b.count || 0) - (a.count || 0);
@@ -362,10 +403,10 @@
           image.alt = "";
           image.loading = "lazy";
           image.decoding = "async";
-          image.onerror = () => { icon.textContent = item.icon || icons[item.type] || "✦"; };
+          image.onerror = () => { icon.textContent = item.icon || "✦"; };
           icon.append(image);
         } else {
-          icon.textContent = item.icon || icons[item.type] || "✦";
+          icon.textContent = item.icon || "✦";
         }
         const name = document.createElement("span");
         name.className = "item-name";
@@ -409,10 +450,10 @@
         image.src = item.image;
         image.alt = item.name || "";
         image.decoding = "async";
-        image.onerror = () => { art.textContent = item.icon || icons[item.type] || "✦"; };
+        image.onerror = () => { art.textContent = item.icon || "✦"; };
         art.append(image);
       } else {
-        art.textContent = item.icon || icons[item.type] || "✦";
+        art.textContent = item.icon || "✦";
       }
       add("div","rarity " + (item.rarity || "common"),rarityNames[item.rarity] || "Неизвестная редкость");
       add("h2","",item.name || "Без названия");
@@ -456,6 +497,7 @@
         }
         const data = await response.json();
         state.items = Array.isArray(data) ? data : (data.items || []);
+        renderLocationFilters();
         if (data.gold != null) $("gold").textContent = data.gold;
         $("notice").hidden = true;
         if (state.items.length) {

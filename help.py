@@ -10,7 +10,7 @@ import asyncio, random
 from utils.database import *
 from utils.database import delete_messages as _delete_messages
 from typing import Union, Optional
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage, DisabledButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputRichMessage, DisabledButton, WebAppInfo
 from aiogram.fsm.context import FSMContext
 bot = Bot(token = TOKEN())
 
@@ -340,7 +340,7 @@ async def location_keyboard(location, lvl):
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def profile_keyboard():
-    buttons = [[InlineKeyboardButton(text="Инвентарь",callback_data="open_inventory")]]
+    buttons = [[InlineKeyboardButton(text="Инвентарь",web_app=WebAppInfo(url="https://mobifield.duckdns.org"))]]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 async def inventory_keyboard(player_id):

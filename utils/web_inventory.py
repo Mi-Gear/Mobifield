@@ -154,6 +154,7 @@ async def inventory_data(request: web.Request):
                 "id": item.id,
                 "name": item.name,
                 "count": record.count,
+                "location": item.location,
                 "type": item.type,
                 "rarity": item.rarity,
                 "cost": item.cost,

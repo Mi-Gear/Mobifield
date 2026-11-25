@@ -211,6 +211,14 @@ try {
         'ring4' => 'equipment_ring',
         'ring5' => 'equipment_ring',
     ];
+    // Удаляем устаревшие слоты предыдущей версии; сами предметы остаются в сумке.
+    $cleanup = $db->prepare(
+        "DELETE FROM player_equipment
+         WHERE player_id = :player_id
+           AND slot NOT IN ('rod','gloves','axe','pickaxe','weapon','ring1','ring2','ring3','ring4','ring5')"
+    );
+    $cleanup->execute([':player_id' => $playerId]);
+
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $payload = json_decode((string) file_get_contents('php://input'), true);
         if (!is_array($payload)) {

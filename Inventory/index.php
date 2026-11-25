@@ -613,8 +613,16 @@
           throw new Error(errorData.error || "Сервер вернул HTTP " + response.status);
         }
         const data = await response.json();
-        state.items = Array.isArray(data) ? data : (data.items || []);
-        state.equipment = data.equipment || {};
+        if (!data || typeof data !== "object") {
+          throw new Error("API инвентаря вернул пустой ответ.");
+        }
+        const receivedItems = Array.isArray(data) ? data : data.items;
+        state.items = Array.isArray(receivedItems)
+          ? receivedItems.filter(item => item && typeof item === "object")
+          : [];
+        state.equipment = data.equipment && typeof data.equipment === "object"
+          ? data.equipment
+          : {};
         renderLocationFilters();
         if (data.gold != null) $("gold").textContent = data.gold;
         $("notice").hidden = true;

@@ -198,10 +198,19 @@ try {
         jsonResponse(['error' => 'Персонаж не найден'], 404);
     }
 
-    // Смена экипировки. Слоты задаются типом предмета: equipment_head,
-    // equipment_body, equipment_legs, equipment_feet, equipment_mainhand,
-    // equipment_offhand, equipment_amulet или equipment_ring.
-    $allowedSlots = ['head', 'body', 'legs', 'feet', 'mainhand', 'offhand', 'amulet', 'ring'];
+    // Типы предметов экипировки. Пять колец используют один тип предмета.
+    $slotTypes = [
+        'rod' => 'equipment_rod',
+        'gloves' => 'equipment_gloves',
+        'axe' => 'equipment_axe',
+        'pickaxe' => 'equipment_pickaxe',
+        'weapon' => 'equipment_weapon',
+        'ring1' => 'equipment_ring',
+        'ring2' => 'equipment_ring',
+        'ring3' => 'equipment_ring',
+        'ring4' => 'equipment_ring',
+        'ring5' => 'equipment_ring',
+    ];
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $payload = json_decode((string) file_get_contents('php://input'), true);
         if (!is_array($payload)) {
@@ -210,7 +219,7 @@ try {
 
         $action = (string) ($payload['action'] ?? '');
         $slot = (string) ($payload['slot'] ?? '');
-        if (!in_array($slot, $allowedSlots, true)) {
+        if (!array_key_exists($slot, $slotTypes)) {
             jsonResponse(['error' => 'Неизвестный слот экипировки'], 400);
         }
 
@@ -229,9 +238,22 @@ try {
                 );
                 $owned->execute([':player_id' => $playerId, ':item_id' => $itemId]);
                 $item = $owned->fetch();
-                if (!$item || $item['type'] !== 'equipment_' . $slot) {
+                if (!$item || $item['type'] !== $slotTypes[$slot]) {
                     $db->rollBack();
                     jsonResponse(['error' => 'Этот предмет нельзя надеть в выбранный слот'], 400);
+                }
+
+                $alreadyEquipped = $db->prepare(
+                    'SELECT slot FROM player_equipment
+                     WHERE player_id = :player_id AND item_id = :item_id AND slot != :slot
+                     LIMIT 1'
+                );
+                $alreadyEquipped->execute([
+                    ':player_id' => $playerId, ':item_id' => $itemId, ':slot' => $slot
+                ]);
+                if ($alreadyEquipped->fetch()) {
+                    $db->rollBack();
+                    jsonResponse(['error' => 'Этот предмет уже надет'], 409);
                 }
 
                 $save = $db->prepare(

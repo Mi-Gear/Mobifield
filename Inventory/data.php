@@ -190,6 +190,19 @@ try {
     $playerId = validateTelegramInitData((string) $initData, getBotToken($projectRoot));
     $db = getDatabase($projectRoot);
 
+    // Создаём таблицу экипировки и для уже существующих SQLite-баз,
+    // которые были созданы до добавления модели PlayerEquipment.
+    $db->exec(
+        'CREATE TABLE IF NOT EXISTS player_equipment (
+            player_id INTEGER NOT NULL,
+            slot TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            PRIMARY KEY (player_id, slot),
+            FOREIGN KEY (player_id) REFERENCES players (ID),
+            FOREIGN KEY (item_id) REFERENCES item_base (id)
+        )'
+    );
+
     $playerStatement = $db->prepare('SELECT gold FROM players WHERE ID = :id LIMIT 1');
     $playerStatement->execute([':id' => $playerId]);
     $player = $playerStatement->fetch();

@@ -113,6 +113,13 @@ function preferredImagePath(string $pngPath): string
     return $pngPath;
 }
 
+function imageUrl(PDO $db, string $projectRoot, string $imageId): string
+{
+    $path = imagePath($db, $projectRoot, $imageId);
+    $version = (string) filemtime($path);
+    return '/inventory/data?image=' . rawurlencode($imageId) . '&v=' . rawurlencode($version);
+}
+
 function imagePath(PDO $db, string $projectRoot, string $imageId): string
 {
     $placeholder = $projectRoot . '/images/placeholder.png';
@@ -325,7 +332,7 @@ try {
             'rarity' => $gear['rarity'],
             'description' => $gear['description'],
             'cost' => $gear['cost'] === null ? null : (int) $gear['cost'],
-            'image' => '/inventory/data?image=' . rawurlencode((string) $gear['id']),
+            'image' => imageUrl($db, $projectRoot, (string) $gear['id']),
         ];
     }
 
@@ -356,7 +363,7 @@ try {
             'rarity' => $item['rarity'],
             'cost' => $item['cost'] === null ? null : (int) $item['cost'],
             'description' => $item['description'],
-            'image' => '/inventory/data?image=' . rawurlencode((string) $item['id']),
+            'image' => imageUrl($db, $projectRoot, (string) $item['id']),
         ];
     }
 

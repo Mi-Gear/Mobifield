@@ -392,16 +392,23 @@
     }
 
     const equipmentSlots = [
-      ["head", "Голова"], ["body", "Тело"], ["legs", "Ноги"], ["feet", "Обувь"],
-      ["mainhand", "Основное оружие"], ["offhand", "Дополнительное оружие"],
-      ["amulet", "Амулет"], ["ring", "Кольцо"]
+      ["rod", "Удочка", "equipment_rod"],
+      ["gloves", "Перчатки", "equipment_gloves"],
+      ["axe", "Топор", "equipment_axe"],
+      ["pickaxe", "Кирка", "equipment_pickaxe"],
+      ["weapon", "Оружие", "equipment_weapon"],
+      ["ring1", "Кольцо I", "equipment_ring"],
+      ["ring2", "Кольцо II", "equipment_ring"],
+      ["ring3", "Кольцо III", "equipment_ring"],
+      ["ring4", "Кольцо IV", "equipment_ring"],
+      ["ring5", "Кольцо V", "equipment_ring"]
     ];
 
     function renderEquipment() {
       const container = $("items");
       container.replaceChildren();
       const fragment = document.createDocumentFragment();
-      equipmentSlots.forEach(([slot, label]) => {
+      equipmentSlots.forEach(([slot, label, itemType]) => {
         const equipped = state.equipment[slot];
         const card = document.createElement("section");
         card.className = "gear-slot";
@@ -426,9 +433,12 @@
           empty.textContent = "Пусто";
           card.append(empty);
         }
-        const candidates = state.items.filter(item => item.type === "equipment_" + slot);
+
+        const equippedIds = new Set(Object.values(state.equipment).filter(Boolean).map(item => item.id));
+        const candidates = state.items.filter(item =>
+          item.type === itemType && !equippedIds.has(item.id)
+        );
         candidates.forEach(item => {
-          if (equipped?.id === item.id) return;
           const equip = document.createElement("button");
           equip.className = "gear-action";
           equip.type = "button";
@@ -445,8 +455,8 @@
         fragment.append(card);
       });
       container.append(fragment);
-      $("total").textContent = "8 слотов";
-      $("countline").querySelector("span").textContent = "ЭКИПИРОВКА";
+      $("total").textContent = "10 слотов";
+      $("countline").querySelector("span").textContent = "СНАРЯЖЕНИЕ";
     }
 
     async function changeEquipment(action, slot, itemId = null) {

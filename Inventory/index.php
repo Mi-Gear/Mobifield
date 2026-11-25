@@ -267,6 +267,14 @@
     .tab:focus-visible,.item:focus-visible,.sort:focus-visible,.search:focus-visible {
       outline:2px solid #b49a6c; outline-offset:2px;
     }
+    .gear-slot { min-width:0; padding:12px; border:1px solid #454638; background:#1b1d18; display:flex; flex-direction:column; gap:8px; }
+    .gear-slot-title { color:#c6b58e; font:600 12px Arial,sans-serif; text-transform:uppercase; letter-spacing:.05em; }
+    .gear-item-name { color:#e0d8c7; font:15px Georgia,serif; overflow-wrap:anywhere; }
+    .gear-empty { color:#77786f; font:12px Arial,sans-serif; }
+    .gear-action { border:1px solid #514936; background:#25251f; color:#d5cbb5; padding:7px 9px; text-align:left; cursor:pointer; }
+    .gear-action:hover { border-color:#a88b5c; }
+    #items:has(.gear-slot) { grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; }
+    @media(max-width:520px) { #items:has(.gear-slot) { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -314,7 +322,7 @@
   </main>
 
   <script>
-    const state = { items: [], filter: "all", selected: null, query: "", sort: "name" };
+    const state = { items: [], equipment: {}, view: "items", filter: "all", selected: null, query: "", sort: "name" };
     const rarityNames = { common: "Обычный", rare: "Редкий", epic: "Эпический", legendary: "Легендарный" };
     const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
     const locationMeta = {
@@ -363,6 +371,12 @@
         fragment.append(button);
       });
 
+      const gearButton = document.createElement("button");
+      gearButton.className = "tab" + (state.view === "equipment" ? " active" : "");
+      gearButton.dataset.view = "equipment";
+      gearButton.dataset.symbol = "⚒";
+      gearButton.textContent = "Снаряжение";
+      fragment.append(gearButton);
       tabs.replaceChildren(fragment);
     }
 
@@ -377,7 +391,93 @@
       });
     }
 
+    const equipmentSlots = [
+      ["head", "Голова"], ["body", "Тело"], ["legs", "Ноги"], ["feet", "Обувь"],
+      ["mainhand", "Основное оружие"], ["offhand", "Дополнительное оружие"],
+      ["amulet", "Амулет"], ["ring", "Кольцо"]
+    ];
+
+    function renderEquipment() {
+      const container = $("items");
+      container.replaceChildren();
+      const fragment = document.createDocumentFragment();
+      equipmentSlots.forEach(([slot, label]) => {
+        const equipped = state.equipment[slot];
+        const card = document.createElement("section");
+        card.className = "gear-slot";
+        const title = document.createElement("div");
+        title.className = "gear-slot-title";
+        title.textContent = label;
+        card.append(title);
+        if (equipped) {
+          const name = document.createElement("div");
+          name.className = "gear-item-name";
+          name.textContent = equipped.name;
+          card.append(name);
+          const remove = document.createElement("button");
+          remove.className = "gear-action";
+          remove.type = "button";
+          remove.textContent = "Снять";
+          remove.addEventListener("click", () => changeEquipment("unequip", slot));
+          card.append(remove);
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "gear-empty";
+          empty.textContent = "Пусто";
+          card.append(empty);
+        }
+        const candidates = state.items.filter(item => item.type === "equipment_" + slot);
+        candidates.forEach(item => {
+          if (equipped?.id === item.id) return;
+          const equip = document.createElement("button");
+          equip.className = "gear-action";
+          equip.type = "button";
+          equip.textContent = "Надеть: " + item.name;
+          equip.addEventListener("click", () => changeEquipment("equip", slot, item.id));
+          card.append(equip);
+        });
+        if (!equipped && !candidates.length) {
+          const unavailable = document.createElement("div");
+          unavailable.className = "gear-empty";
+          unavailable.textContent = "Нет подходящих предметов";
+          card.append(unavailable);
+        }
+        fragment.append(card);
+      });
+      container.append(fragment);
+      $("total").textContent = "8 слотов";
+      $("countline").querySelector("span").textContent = "ЭКИПИРОВКА";
+    }
+
+    async function changeEquipment(action, slot, itemId = null) {
+      try {
+        const response = await fetch("/inventory/data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Telegram-Init-Data": window.Telegram?.WebApp?.initData || ""
+          },
+          body: JSON.stringify({ action, slot, item_id: itemId })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось изменить экипировку");
+        await loadInventory();
+        state.view = "equipment";
+        renderLocationFilters();
+        render();
+      } catch (error) {
+        $("notice").hidden = false;
+        $("notice").textContent = error.message;
+      }
+    }
+
     function render() {
+      if (state.view === "equipment") {
+        renderEquipment();
+        return;
+      }
+      $("countline").querySelector("span").textContent = "ПРЕДМЕТЫ";
       const list = visibleItems();
       $("total").textContent = list.length + " предметов";
       $("items").replaceChildren();
@@ -468,8 +568,16 @@
     }
 
     $("tabs").addEventListener("click", event => {
+      const gearButton = event.target.closest("button[data-view='equipment']");
+      if (gearButton) {
+        state.view = "equipment";
+        renderLocationFilters();
+        render();
+        return;
+      }
       const button = event.target.closest("button[data-filter]");
       if (!button) return;
+      state.view = "items";
       state.filter = button.dataset.filter;
       $("tabs").querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab === button));
       render();
@@ -496,6 +604,7 @@
         }
         const data = await response.json();
         state.items = Array.isArray(data) ? data : (data.items || []);
+        state.equipment = data.equipment || {};
         renderLocationFilters();
         if (data.gold != null) $("gold").textContent = data.gold;
         $("notice").hidden = true;

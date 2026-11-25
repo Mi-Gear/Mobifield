@@ -269,9 +269,11 @@
     }
     .gear-slot { min-width:0; padding:12px; border:1px solid #454638; background:#1b1d18; display:flex; flex-direction:column; gap:8px; }
     .gear-slot-title { color:#c6b58e; font:600 12px Arial,sans-serif; text-transform:uppercase; letter-spacing:.05em; }
+    .gear-item-image { display:block; width:100%; height:104px; object-fit:contain; padding:5px; background:#151712; border:1px solid #37392f; }
+    .gear-choice-image { display:block; width:42px; height:42px; flex:0 0 42px; object-fit:contain; }
     .gear-item-name { color:#e0d8c7; font:15px Georgia,serif; overflow-wrap:anywhere; }
     .gear-empty { color:#77786f; font:12px Arial,sans-serif; }
-    .gear-action { border:1px solid #514936; background:#25251f; color:#d5cbb5; padding:7px 9px; text-align:left; cursor:pointer; }
+    .gear-action { display:flex; align-items:center; gap:9px; width:100%; border:1px solid #514936; background:#25251f; color:#d5cbb5; padding:7px 9px; text-align:left; cursor:pointer; }
     .gear-action:hover { border-color:#a88b5c; }
     #items:has(.gear-slot) { grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; }
     @media(max-width:520px) { #items:has(.gear-slot) { grid-template-columns:1fr; } }
@@ -417,6 +419,15 @@
         title.textContent = label;
         card.append(title);
         if (equipped) {
+          const image = document.createElement("img");
+          image.className = "gear-item-image";
+          image.src = equipped.image || "";
+          image.alt = equipped.name || "";
+          image.loading = "lazy";
+          image.decoding = "async";
+          image.onerror = () => { image.hidden = true; };
+          card.append(image);
+
           const name = document.createElement("div");
           name.className = "gear-item-name";
           name.textContent = equipped.name;
@@ -448,7 +459,14 @@
           const equip = document.createElement("button");
           equip.className = "gear-action";
           equip.type = "button";
-          equip.textContent = "Надеть: " + item.name;
+          const image = document.createElement("img");
+          image.className = "gear-choice-image";
+          image.src = item.image || "";
+          image.alt = "";
+          image.loading = "lazy";
+          image.decoding = "async";
+          image.onerror = () => { image.hidden = true; };
+          equip.append(image, document.createTextNode("Надеть: " + item.name));
           equip.addEventListener("click", () => changeEquipment("equip", slot, item.id));
           card.append(equip);
         });

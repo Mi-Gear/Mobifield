@@ -434,10 +434,16 @@
           card.append(empty);
         }
 
-        const equippedIds = new Set(Object.values(state.equipment).filter(Boolean).map(item => item.id));
-        const candidates = state.items.filter(item =>
-          item.type === itemType && !equippedIds.has(item.id)
-        );
+        const equippedCounts = Object.values(state.equipment).filter(Boolean).reduce((counts, item) => {
+          counts[item.id] = (counts[item.id] || 0) + 1;
+          return counts;
+        }, {});
+        const candidates = state.items.filter(item => {
+          if (item.type !== itemType) return false;
+          const alreadyInThisSlot = equipped && equipped.id === item.id;
+          const usedCopies = equippedCounts[item.id] || 0;
+          return alreadyInThisSlot || usedCopies < Number(item.count || 0);
+        });
         candidates.forEach(item => {
           const equip = document.createElement("button");
           equip.className = "gear-action";

@@ -1,4 +1,3 @@
-import base64
 import hashlib
 import hmac
 import json
@@ -10,12 +9,31 @@ from aiohttp import web
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from utils.database import Inventory, ItemBase, PlayerModel, Session
+from utils.database import (
+    Inventory,
+    ItemBase,
+    PlayerEquipment,
+    PlayerModel,
+    Session,
+)
 
 
 WEB_HOST = "127.0.0.1"
 WEB_PORT = 8765
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+EQUIPMENT_SLOTS = {
+    "rod": "equipment_rod",
+    "gloves": "equipment_gloves",
+    "axe": "equipment_axe",
+    "pickaxe": "equipment_pickaxe",
+    "weapon": "equipment_weapon",
+    "ring1": "equipment_ring",
+    "ring2": "equipment_ring",
+    "ring3": "equipment_ring",
+    "ring4": "equipment_ring",
+    "ring5": "equipment_ring",
+}
 
 
 def validate_init_data(init_data: str, bot_token: str) -> dict:
@@ -46,29 +64,38 @@ def validate_init_data(init_data: str, bot_token: str) -> dict:
     except (TypeError, ValueError, json.JSONDecodeError) as error:
         raise ValueError("Некорректные данные Telegram") from error
 
-    if auth_date > time.time() + 30 or time.time() - auth_date > 86400:
+    if auth_date <= 0 or auth_date > time.time() + 30 or time.time() - auth_date > 86400:
         raise ValueError("Telegram initData устарели")
 
-    player_id = user.get("id")
+    player_id = user.get("id") if isinstance(user, dict) else None
     if not isinstance(player_id, int):
         raise ValueError("В initData отсутствует Telegram user ID")
 
     return {"user_id": player_id}
 
 
-async def inventory_data(request: web.Request):
-    # Прямое открытие картинки в обычном браузере для проверки.
-    # Отдаём только изображения предметов, не данные инвентаря.
-    raw_image_id = request.query.get("image")
-    if raw_image_id and request.query.get("raw") == "1":
-        placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
-        print(placeholder_path, flush=True)
+def get_image_path(image_id: str) -> Path | None:
+    if image_id == "__placeholder__":
+        path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
+        return path if path.is_file() else None
 
-        if raw_image_id == "__placeholder__":
-            image_path = placeholder_path
+    if not image_id or len(image_id) > 100 or any(
+        char not in "abcdefghijklmnopqrstuvwxyz0123456789_-" for char in image_id
+    ):
+        return None
+
+    # Resolve the item directory from the database in the async handler.
+    return None
+
+
+async def inventory_data(request: web.Request):
+    image_id = request.query.get("image")
+    if image_id:
+        if image_id == "__placeholder__":
+            image_path = get_image_path(image_id)
         else:
             async with Session() as session:
-                item = await session.get(ItemBase, raw_image_id)
+                item = await session.get(ItemBase, image_id)
                 image_path = None
                 if item is not None and item.image_pathname:
                     candidate = (
@@ -78,67 +105,82 @@ async def inventory_data(request: web.Request):
                         image_path = candidate
 
         if image_path is None or not image_path.is_file():
+            image_path = get_image_path("__placeholder__")
+        if image_path is None:
             raise web.HTTPNotFound(text="Изображение не найдено")
-
         return web.FileResponse(
             image_path,
-            headers={"Cache-Control": "public, max-age=3600"},
+            headers={"Cache-Control": "public, max-age=2592000"},
         )
 
-    init_data = request.headers.get("X-Telegram-Init-Data", "")
     try:
-        identity = validate_init_data(init_data, request.app["bot_token"])
+        identity = validate_init_data(
+            request.headers.get("X-Telegram-Init-Data", ""),
+            request.app["bot_token"],
+        )
     except (ValueError, TypeError) as error:
         return web.json_response({"error": str(error)}, status=401)
 
     player_id = identity["user_id"]
-    image_id = request.query.get("image")
-    if image_id:
-        placeholder_path = (PROJECT_ROOT / "images" / "placeholder.png").resolve()
-        print(placeholder_path)
-
-        # Mini App запрашивает заглушку один раз и переиспользует её для всех предметов.
-        if image_id == "__placeholder__":
-            image_path = placeholder_path
-        else:
-            async with Session() as session:
-                item = await session.get(ItemBase, image_id)
-                image_path = None
-                if item is not None and item.image_pathname:
-                    candidate = (
-                        PROJECT_ROOT / item.image_pathname / f"{item.id}.png"
-                    ).resolve()
-                    if candidate.is_file():
-                        image_path = candidate
-
-                if image_path is None:
-                    print(
-                        f"[Mobifield inventory] item={image_id} "
-                        f"has_no_image; placeholder will be shared",
-                        flush=True,
-                    )
-                    return web.json_response({"image": None, "placeholder": True})
-
-        print(
-            f"[Mobifield inventory] image={image_id} "
-            f"image_path={image_path} exists={image_path.is_file()}",
-            flush=True,
-        )
-        try:
-            image_data = base64.b64encode(image_path.read_bytes()).decode("ascii")
-        except OSError as error:
-            print(
-                f"[Mobifield inventory] image_read_error={error}",
-                flush=True,
-            )
-            return web.json_response({"image": None}, status=500)
-
-        return web.json_response({"image": "data:image/png;base64," + image_data})
-
     async with Session() as session:
         player = await session.get(PlayerModel, player_id)
         if player is None:
             return web.json_response({"error": "Персонаж не найден"}, status=404)
+
+        if request.method == "POST":
+            try:
+                payload = await request.json()
+            except (json.JSONDecodeError, ValueError):
+                return web.json_response({"error": "Некорректный запрос"}, status=400)
+
+            action = str(payload.get("action", ""))
+            slot = str(payload.get("slot", ""))
+            if slot not in EQUIPMENT_SLOTS:
+                return web.json_response({"error": "Неизвестный слот экипировки"}, status=400)
+
+            if action == "equip":
+                item_id = str(payload.get("item_id", ""))
+                owned = await session.scalar(
+                    select(Inventory)
+                    .where(
+                        Inventory.pl_id == player_id,
+                        Inventory.id == item_id,
+                        Inventory.count > 0,
+                    )
+                    .options(selectinload(Inventory.base))
+                )
+                if owned is None or owned.base is None or owned.base.type != EQUIPMENT_SLOTS[slot]:
+                    return web.json_response(
+                        {"error": "Этот предмет нельзя надеть в выбранный слот"},
+                        status=400,
+                    )
+
+                already_equipped = await session.scalar(
+                    select(PlayerEquipment).where(
+                        PlayerEquipment.player_id == player_id,
+                        PlayerEquipment.item_id == item_id,
+                        PlayerEquipment.slot != slot,
+                    )
+                )
+                if already_equipped is not None:
+                    return web.json_response({"error": "Этот предмет уже надет"}, status=409)
+
+                equipped = await session.get(PlayerEquipment, (player_id, slot))
+                if equipped is None:
+                    session.add(PlayerEquipment(
+                        player_id=player_id, slot=slot, item_id=item_id
+                    ))
+                else:
+                    equipped.item_id = item_id
+            elif action == "unequip":
+                equipped = await session.get(PlayerEquipment, (player_id, slot))
+                if equipped is not None:
+                    await session.delete(equipped)
+            else:
+                return web.json_response({"error": "Неизвестное действие"}, status=400)
+
+            await session.commit()
+            return web.json_response({"success": True})
 
         result = await session.scalars(
             select(Inventory)
@@ -160,15 +202,38 @@ async def inventory_data(request: web.Request):
                 "rarity": item.rarity,
                 "cost": item.cost,
                 "description": item.description,
+                "image": f"/inventory/data?image={item.id}",
             })
 
-        return web.json_response({"items": items, "gold": player.gold})
+        equipment_result = await session.scalars(
+            select(PlayerEquipment)
+            .where(PlayerEquipment.player_id == player_id)
+        )
+        equipment = {}
+        for equipped in equipment_result.all():
+            item = await session.get(ItemBase, equipped.item_id)
+            if item is None:
+                continue
+            equipment[equipped.slot] = {
+                "id": item.id,
+                "name": item.name,
+                "rarity": item.rarity,
+                "description": item.description,
+                "cost": item.cost,
+                "image": f"/inventory/data?image={item.id}",
+            }
+
+        return web.json_response({
+            "items": items,
+            "equipment": equipment,
+            "gold": player.gold,
+        })
 
 
 def create_app(bot_token: str) -> web.Application:
     app = web.Application()
     app["bot_token"] = bot_token
-    app.router.add_get("/inventory/data", inventory_data)
+    app.router.add_route("*", "/inventory/data", inventory_data)
     return app
 
 

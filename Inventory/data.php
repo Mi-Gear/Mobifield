@@ -135,16 +135,22 @@ function imagePath(PDO $db, string $projectRoot, string $imageId): string
 
     if ($item && !empty($item['image_pathname'])) {
         $relativeDirectory = trim((string) $item['image_pathname'], '/');
-        $candidate = realpath($projectRoot . '/' . $relativeDirectory . '/' . $imageId . '.png');
         $rootPrefix = rtrim($projectRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 
-        if (
-            $candidate !== false
-            && strpos($candidate, $rootPrefix) === 0
-            && is_file($candidate)
-            && is_readable($candidate)
-        ) {
-            return preferredImagePath($candidate);
+        // Сначала ищем WebP: он может быть единственным оставшимся форматом.
+        foreach (['webp', 'png', 'jpg', 'jpeg'] as $extension) {
+            $candidate = realpath(
+                $projectRoot . '/' . $relativeDirectory . '/' . $imageId . '.' . $extension
+            );
+
+            if (
+                $candidate !== false
+                && strpos($candidate, $rootPrefix) === 0
+                && is_file($candidate)
+                && is_readable($candidate)
+            ) {
+                return $candidate;
+            }
         }
     }
 

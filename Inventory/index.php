@@ -302,7 +302,7 @@
             </select>
           </div>
         </div>
-        <div class="countline"><span>ПРЕДМЕТЫ</span><span id="total">0 предметов</span></div>
+        <div class="countline" id="countline"><span>ПРЕДМЕТЫ</span><span id="total">0 предметов</span></div>
         <div class="items" id="items"><div class="empty">Загружаем содержимое сумки…</div></div>
       </section>
 

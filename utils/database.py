@@ -60,6 +60,18 @@ class Inventory(Base):
 
     base: Mapped["ItemBase"] = relationship(lazy="selectin")
 
+class PlayerEquipment(Base):
+    """Один надетый предмет на каждый слот персонажа."""
+
+    __tablename__ = "player_equipment"
+
+    player_id: Mapped[int] = mapped_column(
+        ForeignKey("players.ID"), primary_key=True
+    )
+    slot: Mapped[str] = mapped_column(String, primary_key=True)
+    item_id: Mapped[str] = mapped_column(ForeignKey("item_base.id"), nullable=False)
+
+
 class LocationRequirement(Base):
     __tablename__ = "location_req"
 

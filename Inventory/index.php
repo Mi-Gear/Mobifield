@@ -355,7 +355,7 @@
 
       const fragment = document.createDocumentFragment();
       const allButton = document.createElement("button");
-      allButton.className = "tab" + (state.filter === "all" ? " active" : "");
+      allButton.className = "tab" + (state.view === "items" && state.filter === "all" ? " active" : "");
       allButton.dataset.filter = "all";
       allButton.dataset.symbol = "✧";
       allButton.textContent = "Все";
@@ -364,7 +364,7 @@
       locations.forEach(location => {
         const meta = locationMeta[location] || {};
         const button = document.createElement("button");
-        button.className = "tab" + (state.filter === location ? " active" : "");
+        button.className = "tab" + (state.view === "items" && state.filter === location ? " active" : "");
         button.dataset.filter = location;
         button.dataset.symbol = meta.symbol || "◇";
         button.textContent = locationLabel(location);

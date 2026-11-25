@@ -249,7 +249,7 @@ try {
             if ($action === 'equip') {
                 $itemId = (string) ($payload['item_id'] ?? '');
                 $owned = $db->prepare(
-                    'SELECT item_base.type
+                    'SELECT item_base.type, inventory.count
                      FROM inventory
                      INNER JOIN item_base ON item_base.id = inventory.id
                      WHERE inventory.pl_id = :player_id
@@ -264,17 +264,20 @@ try {
                     jsonResponse(['error' => 'Этот предмет нельзя надеть в выбранный слот'], 400);
                 }
 
-                $alreadyEquipped = $db->prepare(
-                    'SELECT slot FROM player_equipment
-                     WHERE player_id = :player_id AND item_id = :item_id AND slot != :slot
-                     LIMIT 1'
+                // Один ID может занимать несколько слотов, если у игрока есть
+                // соответствующее количество экземпляров этого предмета.
+                $equippedCount = $db->prepare(
+                    'SELECT COUNT(*) FROM player_equipment
+                     WHERE player_id = :player_id
+                       AND item_id = :item_id
+                       AND slot != :slot'
                 );
-                $alreadyEquipped->execute([
+                $equippedCount->execute([
                     ':player_id' => $playerId, ':item_id' => $itemId, ':slot' => $slot
                 ]);
-                if ($alreadyEquipped->fetch()) {
+                if ((int) $equippedCount->fetchColumn() >= (int) $item['count']) {
                     $db->rollBack();
-                    jsonResponse(['error' => 'Этот предмет уже надет'], 409);
+                    jsonResponse(['error' => 'Все экземпляры этого предмета уже надеты'], 409);
                 }
 
                 $save = $db->prepare(

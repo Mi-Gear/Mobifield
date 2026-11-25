@@ -198,6 +198,85 @@ try {
         jsonResponse(['error' => 'Персонаж не найден'], 404);
     }
 
+    // Смена экипировки. Слоты задаются типом предмета: equipment_head,
+    // equipment_body, equipment_legs, equipment_feet, equipment_mainhand,
+    // equipment_offhand, equipment_amulet или equipment_ring.
+    $allowedSlots = ['head', 'body', 'legs', 'feet', 'mainhand', 'offhand', 'amulet', 'ring'];
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        $payload = json_decode((string) file_get_contents('php://input'), true);
+        if (!is_array($payload)) {
+            jsonResponse(['error' => 'Некорректный запрос'], 400);
+        }
+
+        $action = (string) ($payload['action'] ?? '');
+        $slot = (string) ($payload['slot'] ?? '');
+        if (!in_array($slot, $allowedSlots, true)) {
+            jsonResponse(['error' => 'Неизвестный слот экипировки'], 400);
+        }
+
+        $db->beginTransaction();
+        try {
+            if ($action === 'equip') {
+                $itemId = (string) ($payload['item_id'] ?? '');
+                $owned = $db->prepare(
+                    'SELECT item_base.type
+                     FROM inventory
+                     INNER JOIN item_base ON item_base.id = inventory.id
+                     WHERE inventory.pl_id = :player_id
+                       AND inventory.id = :item_id
+                       AND inventory.count > 0
+                     LIMIT 1'
+                );
+                $owned->execute([':player_id' => $playerId, ':item_id' => $itemId]);
+                $item = $owned->fetch();
+                if (!$item || $item['type'] !== 'equipment_' . $slot) {
+                    $db->rollBack();
+                    jsonResponse(['error' => 'Этот предмет нельзя надеть в выбранный слот'], 400);
+                }
+
+                $save = $db->prepare(
+                    'INSERT INTO player_equipment (player_id, slot, item_id)
+                     VALUES (:player_id, :slot, :item_id)
+                     ON CONFLICT(player_id, slot) DO UPDATE SET item_id = excluded.item_id'
+                );
+                $save->execute([':player_id' => $playerId, ':slot' => $slot, ':item_id' => $itemId]);
+            } elseif ($action === 'unequip') {
+                $remove = $db->prepare(
+                    'DELETE FROM player_equipment WHERE player_id = :player_id AND slot = :slot'
+                );
+                $remove->execute([':player_id' => $playerId, ':slot' => $slot]);
+            } else {
+                $db->rollBack();
+                jsonResponse(['error' => 'Неизвестное действие'], 400);
+            }
+            $db->commit();
+            jsonResponse(['success' => true]);
+        } catch (Throwable $error) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $error;
+        }
+    }
+
+    $equipmentStatement = $db->prepare(
+        'SELECT player_equipment.slot, item_base.id, item_base.name,
+                item_base.rarity, item_base.description, item_base.cost
+         FROM player_equipment
+         INNER JOIN item_base ON item_base.id = player_equipment.item_id
+         WHERE player_equipment.player_id = :player_id'
+    );
+    $equipmentStatement->execute([':player_id' => $playerId]);
+    $equipment = [];
+    foreach ($equipmentStatement->fetchAll() as $gear) {
+        $equipment[$gear['slot']] = [
+            'id' => (string) $gear['id'],
+            'name' => $gear['name'],
+            'rarity' => $gear['rarity'],
+            'description' => $gear['description'],
+            'cost' => $gear['cost'] === null ? null : (int) $gear['cost'],
+            'image' => '/inventory/data?image=' . rawurlencode((string) $gear['id']),
+        ];
+    }
+
     $itemsStatement = $db->prepare(
         'SELECT
             item_base.id,
@@ -231,6 +310,7 @@ try {
 
     jsonResponse([
         'items' => $items,
+        'equipment' => $equipment,
         'gold' => (int) $player['gold'],
     ]);
 } catch (InvalidArgumentException $error) {
